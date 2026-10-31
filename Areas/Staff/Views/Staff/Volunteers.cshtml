@@ -1,0 +1,121 @@
+@model List<GiftOfTheGivers.Helpers.Models.Volunteer>
+@{
+    ViewData["Title"] = "Volunteer Applications";
+    ViewData["NavActive"] = "volunteers";
+    var pending = Model.Count(v => v.Status == "Pending");
+    var approved = Model.Count(v => v.Status == "Approved");
+}
+
+<div class="d-flex flex-wrap justify-content-between align-items-end gap-2 mb-4">
+    <div>
+        <h1 class="h4 mb-1">Volunteer applications</h1>
+        <p class="text-muted small mb-0">
+            @pending pending · @approved approved · @Model.Count total
+        </p>
+    </div>
+</div>
+
+@if (TempData["Flash"] is string flash)
+{
+    <div class="flash mb-4" role="alert">
+        <i class="bi bi-check-circle-fill"></i>
+        <span>@flash</span>
+        <button type="button" class="btn-close ms-auto" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
+
+<div class="card feature-card">
+    @if (!Model.Any())
+    {
+        <div class="card-body text-center text-muted py-5">
+            <i class="bi bi-inbox display-6 d-block mb-3" style="color: var(--ink-400);"></i>
+            No volunteer applications yet. Volunteers submit the form on the public
+            <a asp-area="" asp-controller="Volunteers" asp-action="Create">Volunteer page</a>.
+        </div>
+    }
+    else
+    {
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead>
+                    <tr>
+                        <th>Volunteer</th>
+                        <th>Contact</th>
+                        <th>Skills</th>
+                        <th>Availability</th>
+                        <th>Status</th>
+                        <th class="text-end">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var v in Model)
+                    {
+                        <tr>
+                            <td>
+                                <div class="d-flex align-items-center gap-2">
+                                    <span class="avatar">@(v.FullName.FirstOrDefault().ToString().ToUpperInvariant())</span>
+                                    <div>
+                                        <div class="fw-semibold">@v.FullName</div>
+                                        @if (!string.IsNullOrEmpty(v.Notes))
+                                        {
+                                            <div class="small text-muted" style="max-width: 240px;" title="@v.Notes">@v.Notes</div>
+                                        }
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="small">@v.Email<br />@v.Phone</td>
+                            <td class="small" style="max-width: 220px;">
+                                @if (string.IsNullOrEmpty(v.Skills))
+                                {
+                                    <span class="text-muted">—</span>
+                                }
+                                else
+                                {
+                                    foreach (var skill in v.Skills.Split(", ", StringSplitOptions.RemoveEmptyEntries))
+                                    {
+                                        <span class="badge badge-outline me-1 mb-1">@skill</span>
+                                    }
+                                }
+                            </td>
+                            <td><span class="badge badge-soft">@v.Availability</span></td>
+                            <td>
+                                @if (v.Status == "Approved")
+                                {
+                                    <span class="badge badge-soft"><i class="bi bi-check-circle me-1"></i>Approved</span>
+                                }
+                                else if (v.Status == "Declined")
+                                {
+                                    <span class="badge text-bg-danger"><i class="bi bi-x-circle me-1"></i>Declined</span>
+                                }
+                                else
+                                {
+                                    <span class="badge badge-amber"><i class="bi bi-hourglass-split me-1"></i>Pending</span>
+                                }
+                            </td>
+                            <td class="text-end">
+                                <div class="d-inline-flex gap-1">
+                                    @if (v.Status != "Approved")
+                                    {
+                                        <form method="post" asp-area="Staff" asp-controller="Staff" asp-action="UpdateStatus">
+                                            <input type="hidden" name="id" value="@v.Id" />
+                                            <input type="hidden" name="status" value="Approved" />
+                                            <button type="submit" class="btn btn-gotg btn-sm"><i class="bi bi-check-lg"></i> Approve</button>
+                                        </form>
+                                    }
+                                    @if (v.Status != "Declined")
+                                    {
+                                        <form method="post" asp-area="Staff" asp-controller="Staff" asp-action="UpdateStatus">
+                                            <input type="hidden" name="id" value="@v.Id" />
+                                            <input type="hidden" name="status" value="Declined" />
+                                            <button type="submit" class="btn btn-outline-danger btn-sm"><i class="bi bi-x-lg"></i> Decline</button>
+                                        </form>
+                                    }
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+</div>

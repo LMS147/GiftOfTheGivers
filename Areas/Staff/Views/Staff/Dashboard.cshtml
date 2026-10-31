@@ -1,0 +1,172 @@
+@model GiftOfTheGivers.Helpers.Models.ViewModels.StaffDashboardViewModel
+@{
+    ViewData["Title"] = "Staff Overview";
+    ViewData["NavActive"] = "overview";
+}
+
+<!-- Welcome header -->
+<div class="dash-hero mb-4">
+    <div class="d-flex flex-wrap align-items-center justify-content-between gap-3">
+        <div class="d-flex align-items-center gap-3">
+            <span class="avatar avatar-lg">@(User.Identity?.Name?.TrimStart().FirstOrDefault().ToString().ToUpperInvariant() ?? "S")</span>
+            <div>
+                <div class="fw-bold fs-5 text-white">Welcome back, @User.Identity?.Name</div>
+                <div class="small" style="color: rgba(255,255,255,.75);">Here's what's happening across your relief operations.</div>
+            </div>
+        </div>
+        <a class="btn btn-accent btn-sm px-3" asp-area="Staff" asp-controller="Staff" asp-action="Updates">
+            <i class="bi bi-megaphone me-1"></i> Post field update
+        </a>
+    </div>
+</div>
+
+@if (TempData["Flash"] is string flash)
+{
+    <div class="flash mb-4" role="alert">
+        <i class="bi bi-check-circle-fill"></i>
+        <span>@flash</span>
+        <button type="button" class="btn-close ms-auto" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
+
+<!-- Stats -->
+<div class="row g-3 mb-4">
+    <div class="col-6 col-lg-3">
+        <div class="card stat-card h-100">
+            <div class="card-body">
+                <div class="stat-icon"><i class="bi bi-people"></i></div>
+                <div class="stat-value">@Model.VolunteerCount</div>
+                <div class="stat-label">volunteer applications</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-lg-3">
+        <div class="card stat-card h-100">
+            <div class="card-body">
+                <div class="stat-icon"><i class="bi bi-heart"></i></div>
+                <div class="stat-value">@Model.DonationCount</div>
+                <div class="stat-label">donations received</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-lg-3">
+        <div class="card stat-card h-100">
+            <div class="card-body">
+                <div class="stat-icon"><i class="bi bi-cash-coin"></i></div>
+                <div class="stat-value">R @Model.TotalRaisedZar.ToString("N0")</div>
+                <div class="stat-label">raised in ZAR</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-lg-3">
+        <div class="card stat-card h-100">
+            <div class="card-body">
+                <div class="stat-icon"><i class="bi bi-box-seam"></i></div>
+                <div class="stat-value">@Model.ProjectCount</div>
+                <div class="stat-label">projects · @Model.UpdateCount updates</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4">
+    <!-- Recent volunteers -->
+    <div class="col-lg-7">
+        <div class="card feature-card">
+            <div class="card-body p-4">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h2 class="h6 mb-0"><i class="bi bi-people me-2" style="color: var(--brand-600);"></i>Recent volunteer applications</h2>
+                    <a class="small fw-semibold" asp-area="Staff" asp-controller="Staff" asp-action="Volunteers">View all <i class="bi bi-arrow-right"></i></a>
+                </div>
+                @if (!Model.RecentVolunteers.Any())
+                {
+                    <p class="text-muted small mb-0">No applications yet.</p>
+                }
+                else
+                {
+                    <div class="list-group list-group-flush">
+                        @foreach (var v in Model.RecentVolunteers)
+                        {
+                            <div class="list-group-item px-0 d-flex align-items-center gap-3">
+                                <span class="avatar">@(v.FullName.FirstOrDefault().ToString().ToUpperInvariant())</span>
+                                <div class="flex-grow-1 min-width-0">
+                                    <div class="fw-semibold small">@v.FullName</div>
+                                    <div class="small text-muted text-truncate">@(string.IsNullOrEmpty(v.Skills) ? "No skills listed" : v.Skills)</div>
+                                </div>
+                                <span class="badge @(v.Status == "Approved" ? "badge-soft" : v.Status == "Declined" ? "text-bg-danger" : "badge-amber")">@v.Status</span>
+                                <span class="small text-muted d-none d-md-inline">@v.SignUpDate.ToString("dd MMM")</span>
+                            </div>
+                        }
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent donations -->
+    <div class="col-lg-5">
+        <div class="card feature-card">
+            <div class="card-body p-4">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h2 class="h6 mb-0"><i class="bi bi-heart me-2" style="color: var(--brand-600);"></i>Recent donations</h2>
+                    <a class="small fw-semibold" asp-area="Staff" asp-controller="Staff" asp-action="Donations">View all <i class="bi bi-arrow-right"></i></a>
+                </div>
+                @if (!Model.RecentDonations.Any())
+                {
+                    <p class="text-muted small mb-0">No donations yet.</p>
+                }
+                else
+                {
+                    <div class="list-group list-group-flush">
+                        @foreach (var d in Model.RecentDonations)
+                        {
+                            <div class="list-group-item px-0 d-flex align-items-center gap-3">
+                                <span class="avatar" style="background: linear-gradient(135deg, var(--accent-500), var(--accent-400)); color: #1f2937;">@(d.DonorName.FirstOrDefault().ToString().ToUpperInvariant())</span>
+                                <div class="flex-grow-1 min-width-0">
+                                    <div class="fw-semibold small text-truncate">@d.DonorName</div>
+                                    <div class="small text-muted">@d.ReferenceNumber</div>
+                                </div>
+                                <div class="text-end">
+                                    <div class="fw-bold small">@d.Amount.ToString("N2") @d.Currency</div>
+                                    <div class="small text-muted">@(d.IsRecurring ? "Monthly" : "One-time")</div>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Recent updates -->
+<div class="card feature-card mt-4">
+    <div class="card-body p-4">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h2 class="h6 mb-0"><i class="bi bi-megaphone me-2" style="color: var(--brand-600);"></i>Latest field updates</h2>
+            <a class="small fw-semibold" asp-area="Staff" asp-controller="Staff" asp-action="Updates">Post / manage <i class="bi bi-arrow-right"></i></a>
+        </div>
+        @if (!Model.RecentUpdates.Any())
+        {
+            <p class="text-muted small mb-0">Nothing posted yet.</p>
+        }
+        else
+        {
+            <div class="row g-3">
+                @foreach (var u in Model.RecentUpdates)
+                {
+                    <div class="col-md-4">
+                        <div class="card update-card mb-0">
+                            <div class="update-body">
+                                <span class="badge badge-soft mb-2"><i class="bi bi-geo-alt me-1"></i>@u.ReliefProject?.Name</span>
+                                <h3 class="h6 mb-1">@u.Title</h3>
+                                <p class="small text-muted mb-2">@u.Body</p>
+                                <div class="update-meta">@u.PostedByName · @u.PostedAt.ToString("dd MMM yyyy")</div>
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+        }
+    </div>
+</div>

@@ -1,0 +1,100 @@
+@model GiftOfTheGivers.Helpers.Models.ViewModels.VolunteerDashboardViewModel
+@{
+    ViewData["Title"] = "My Application";
+    ViewData["NavActive"] = "application";
+    var app = Model.Application;
+}
+
+<h1 class="h4 mb-4">My volunteer application</h1>
+
+@if (app == null)
+{
+    <div class="card feature-card">
+        <div class="card-body text-center py-5">
+            <i class="bi bi-person-plus display-6 d-block mb-3" style="color: var(--ink-400);"></i>
+            <h2 class="h5 mb-2">No application yet</h2>
+            <p class="text-muted small mb-4" style="max-width: 420px; margin-inline: auto;">
+                You haven't submitted a volunteer application. It takes two minutes —
+                tell us your skills and availability and our staff will review it.
+            </p>
+            <a class="btn btn-gotg px-4" asp-area="" asp-controller="Volunteers" asp-action="Create">
+                <i class="bi bi-person-plus me-1"></i> Sign up to volunteer
+            </a>
+        </div>
+    </div>
+}
+else
+{
+    <div class="row g-4">
+        <div class="col-lg-7">
+            <div class="card feature-card">
+                <div class="card-body p-4">
+                    <h2 class="h6 mb-3"><i class="bi bi-person me-2" style="color: var(--brand-600);"></i>Application details</h2>
+                    <dl class="row mb-0 small">
+                        <dt class="col-sm-4 text-muted fw-normal">Full name</dt>
+                        <dd class="col-sm-8 fw-semibold">@app.FullName</dd>
+                        <dt class="col-sm-4 text-muted fw-normal">Email</dt>
+                        <dd class="col-sm-8">@app.Email</dd>
+                        <dt class="col-sm-4 text-muted fw-normal">Phone</dt>
+                        <dd class="col-sm-8">@app.Phone</dd>
+                        <dt class="col-sm-4 text-muted fw-normal">Availability</dt>
+                        <dd class="col-sm-8"><span class="badge badge-soft">@app.Availability</span></dd>
+                        <dt class="col-sm-4 text-muted fw-normal">Skills</dt>
+                        <dd class="col-sm-8">
+                            @if (string.IsNullOrEmpty(app.Skills))
+                            {
+                                <span class="text-muted">Not specified</span>
+                            }
+                            else
+                            {
+                                foreach (var skill in app.Skills.Split(", ", StringSplitOptions.RemoveEmptyEntries))
+                                {
+                                    <span class="badge badge-outline me-1 mb-1">@skill</span>
+                                }
+                            }
+                        </dd>
+                        <dt class="col-sm-4 text-muted fw-normal">Notes</dt>
+                        <dd class="col-sm-8">@(string.IsNullOrEmpty(app.Notes) ? "—" : app.Notes)</dd>
+                        <dt class="col-sm-4 text-muted fw-normal">Submitted</dt>
+                        <dd class="col-sm-8">@app.SignUpDate.ToString("dd MMMM yyyy, HH:mm")</dd>
+                    </dl>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-5">
+            <div class="card feature-card">
+                <div class="card-body p-4">
+                    <h2 class="h6 mb-3"><i class="bi bi-clipboard-check me-2" style="color: var(--brand-600);"></i>Status</h2>
+                    <div class="mb-3">
+                        <span class="badge fs-6 @(app.Status == "Approved" ? "badge-soft" : app.Status == "Declined" ? "text-bg-danger" : "badge-amber")">
+                            @app.Status
+                        </span>
+                    </div>
+
+                    <div class="app-steps">
+                        <div class="step done">
+                            <span class="step-dot"><i class="bi bi-check-lg"></i></span>
+                            <div><strong>Submitted</strong><small>@app.SignUpDate.ToString("dd MMM yyyy")</small></div>
+                        </div>
+                        <div class="step @(app.Status != "Pending" ? "done" : "")">
+                            <span class="step-dot">2</span>
+                            <div><strong>Reviewed by staff</strong><small>Checked on the staff dashboard</small></div>
+                        </div>
+                        <div class="step @(app.Status == "Approved" ? "done" : (app.Status == "Declined" ? "declined" : ""))">
+                            <span class="step-dot">3</span>
+                            <div><strong>@app.Status</strong><small>Final outcome</small></div>
+                        </div>
+                    </div>
+
+                    <hr style="border-color: var(--line);" />
+                    <p class="small text-muted mb-0">
+                        <i class="bi bi-info-circle me-1" style="color: var(--brand-600);"></i>
+                        Staff review applications and change the status on their dashboard.
+                        You'll see the update here instantly.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+}

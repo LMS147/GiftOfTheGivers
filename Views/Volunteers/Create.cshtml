@@ -1,0 +1,117 @@
+@model GiftOfTheGivers.Helpers.Models.Volunteer
+@{
+    ViewData["Title"] = "Volunteer";
+    ViewData["ActivePage"] = "Volunteer";
+    var skills = (string[])ViewData["Skills"]!;
+    var availability = (string[])ViewData["Availability"]!;
+    var selected = ViewData["SelectedSkills"] as string[] ?? Array.Empty<string>();
+}
+
+<div class="container my-4 my-lg-5">
+    <div class="text-center mb-4 mb-lg-5">
+        <span class="eyebrow" style="justify-content: center;">Give your time</span>
+        <h1 class="h2 mt-2 mb-1">Volunteer with us</h1>
+        <p class="text-muted mb-0">Share your skills and your availability — every hand helps.</p>
+    </div>
+
+    <div class="row g-4 justify-content-center">
+        <!-- Form -->
+        <div class="col-lg-7 col-xl-6">
+            <div class="card feature-card">
+                <div class="card-body p-4 p-md-5">
+                    <form asp-action="Create" method="post" class="needs-validation" novalidate>
+                        <div asp-validation-summary="ModelOnly" class="text-danger small"></div>
+
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label asp-for="FullName" class="form-label"></label>
+                                <div class="field-icon">
+                                    <i class="bi bi-person"></i>
+                                    <input asp-for="FullName" class="form-control" placeholder="e.g. Sipho Ndlovu" />
+                                </div>
+                                <span asp-validation-for="FullName" class="text-danger small"></span>
+                            </div>
+                            <div class="col-md-6">
+                                <label asp-for="Email" class="form-label"></label>
+                                <div class="field-icon">
+                                    <i class="bi bi-envelope"></i>
+                                    <input asp-for="Email" class="form-control" type="email" placeholder="you@example.com" />
+                                </div>
+                                <span asp-validation-for="Email" class="text-danger small"></span>
+                            </div>
+                            <div class="col-md-6">
+                                <label asp-for="Phone" class="form-label"></label>
+                                <div class="field-icon">
+                                    <i class="bi bi-telephone"></i>
+                                    <input asp-for="Phone" class="form-control" type="tel" placeholder="e.g. 082 123 4567" />
+                                </div>
+                                <span asp-validation-for="Phone" class="text-danger small"></span>
+                            </div>
+                            <div class="col-md-6">
+                                <label asp-for="Availability" class="form-label"></label>
+                                <select asp-for="Availability" class="form-select">
+                                    <option value="">— Choose when you're available —</option>
+                                    @foreach (var option in availability)
+                                    {
+                                        <option value="@option">@option</option>
+                                    }
+                                </select>
+                                <span asp-validation-for="Availability" class="text-danger small"></span>
+                            </div>
+                        </div>
+
+                        <div class="mt-4">
+                            <label class="form-label">Skills <span class="text-muted fw-normal">(select all that apply)</span></label>
+                            <div class="d-flex flex-wrap gap-2">
+                                @for (var i = 0; i < skills.Length; i++)
+                                {
+                                    <div>
+                                        <input type="checkbox" class="chip-input" name="selectedSkills"
+                                               value="@skills[i]" id="skill@i" @(selected.Contains(skills[i]) ? "checked" : "") />
+                                        <label class="chip" for="skill@i">@skills[i]</label>
+                                    </div>
+                                }
+                            </div>
+                        </div>
+
+                        <div class="mt-4">
+                            <label asp-for="Notes" class="form-label"></label>
+                            <textarea asp-for="Notes" class="form-control" rows="3"
+                                      placeholder="Anything else we should know? e.g. driver's licence code, languages spoken..."></textarea>
+                            <span asp-validation-for="Notes" class="text-danger small"></span>
+                        </div>
+
+                        <button type="submit" class="btn btn-gotg btn-lg w-100 mt-4">
+                            <i class="bi bi-person-plus me-1"></i> Sign me up
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Side panel -->
+        <div class="col-lg-5 col-xl-4">
+            <div class="card feature-card sticky-lg-top" style="top: 90px;">
+                <div class="card-body p-4 p-md-5">
+                    <h2 class="h5 mb-3"><i class="bi bi-stars me-2" style="color: var(--accent-500);"></i>Why volunteer?</h2>
+                    <ul class="list-unstyled small mb-4">
+                        <li class="mb-2 d-flex gap-2"><i class="bi bi-check-circle-fill" style="color: var(--brand-500);"></i> Be on the ground when it matters most</li>
+                        <li class="mb-2 d-flex gap-2"><i class="bi bi-check-circle-fill" style="color: var(--brand-500);"></i> Use your skills — medical, logistics, catering, building and more</li>
+                        <li class="d-flex gap-2"><i class="bi bi-check-circle-fill" style="color: var(--brand-500);"></i> Join a community of people making a difference</li>
+                    </ul>
+
+                    <h2 class="h5 mb-3"><i class="bi bi-signpost-2 me-2" style="color: var(--brand-600);"></i>How it works</h2>
+                    <ol class="small mb-0" style="padding-left: 1.1rem;">
+                        <li class="mb-2">Complete the form — it takes two minutes.</li>
+                        <li class="mb-2">Our staff review sign-ups on the dashboard.</li>
+                        <li>We contact you about upcoming opportunities.</li>
+                    </ol>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

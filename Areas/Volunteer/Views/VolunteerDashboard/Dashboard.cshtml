@@ -1,0 +1,169 @@
+@model GiftOfTheGivers.Helpers.Models.ViewModels.VolunteerDashboardViewModel
+@{
+    ViewData["Title"] = "Volunteer Overview";
+    ViewData["NavActive"] = "overview";
+    var app = Model.Application;
+}
+
+<!-- Welcome header -->
+<div class="dash-hero mb-4">
+    <div class="d-flex flex-wrap align-items-center justify-content-between gap-3">
+        <div class="d-flex align-items-center gap-3">
+            <span class="avatar avatar-lg">@(User.Identity?.Name?.TrimStart().FirstOrDefault().ToString().ToUpperInvariant() ?? "V")</span>
+            <div>
+                <div class="fw-bold fs-5 text-white">Welcome back, @User.Identity?.Name</div>
+                <div class="small" style="color: rgba(255,255,255,.75);">Your volunteer journey — at a glance.</div>
+            </div>
+        </div>
+        @if (app == null)
+        {
+            <a class="btn btn-accent btn-sm px-3" asp-area="" asp-controller="Volunteers" asp-action="Create">
+                <i class="bi bi-person-plus me-1"></i> Sign up to volunteer
+            </a>
+        }
+    </div>
+</div>
+
+<div class="row g-4">
+    <!-- Application status -->
+    <div class="col-lg-7">
+        <div class="card feature-card">
+            <div class="card-body p-4">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h2 class="h6 mb-0"><i class="bi bi-clipboard-check me-2" style="color: var(--brand-600);"></i>My application</h2>
+                    <a class="small fw-semibold" asp-area="Volunteer" asp-controller="VolunteerDashboard" asp-action="MyApplication">Details <i class="bi bi-arrow-right"></i></a>
+                </div>
+
+                @if (app == null)
+                {
+                    <div class="text-center py-4">
+                        <i class="bi bi-person-plus display-6 d-block mb-3" style="color: var(--ink-400);"></i>
+                        <p class="small text-muted mb-3">You haven't submitted a volunteer application yet.</p>
+                        <a class="btn btn-gotg btn-sm px-3" asp-area="" asp-controller="Volunteers" asp-action="Create">
+                            <i class="bi bi-person-plus me-1"></i> Apply now
+                        </a>
+                    </div>
+                }
+                else
+                {
+                    <!-- Status timeline -->
+                    <div class="app-steps mb-4">
+                        <div class="step done">
+                            <span class="step-dot"><i class="bi bi-check-lg"></i></span>
+                            <div>
+                                <strong>Application submitted</strong>
+                                <small>@app.SignUpDate.ToString("dd MMMM yyyy")</small>
+                            </div>
+                        </div>
+                        <div class="step @(app.Status != "Pending" ? "done" : "")">
+                            <span class="step-dot">@(app.Status != "Pending" ? "<i class=\"bi bi-check-lg\"></i>" : "2")</span>
+                            <div>
+                                <strong>Reviewed by staff</strong>
+                                <small>Applications are checked on the staff dashboard</small>
+                            </div>
+                        </div>
+                        <div class="step @(app.Status == "Approved" ? "done" : (app.Status == "Declined" ? "declined" : ""))">
+                            <span class="step-dot">
+                                @if (app.Status == "Approved") { <i class="bi bi-check-lg"></i> }
+                                else if (app.Status == "Declined") { <i class="bi bi-x-lg"></i> }
+                                else { <text>3</text> }
+                            </span>
+                            <div>
+                                <strong>@app.Status</strong>
+                                <small>
+                                    @if (app.Status == "Approved")
+                                    {
+                                        <text>Welcome aboard — staff will contact you about opportunities.</text>
+                                    }
+                                    else if (app.Status == "Declined")
+                                    {
+                                        <text>Unfortunately we can't take you on right now.</text>
+                                    }
+                                    else
+                                    {
+                                        <text>We'll let you know as soon as staff review your application.</text>
+                                    }
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="d-flex flex-wrap gap-2 align-items-center">
+                        <span class="badge @(app.Status == "Approved" ? "badge-soft" : app.Status == "Declined" ? "text-bg-danger" : "badge-amber")">
+                            @app.Status
+                        </span>
+                        @if (!string.IsNullOrEmpty(app.Skills))
+                        {
+                            foreach (var skill in app.Skills.Split(", ", StringSplitOptions.RemoveEmptyEntries))
+                            {
+                                <span class="badge badge-outline">@skill</span>
+                            }
+                        }
+                        <span class="badge badge-outline"><i class="bi bi-clock me-1"></i>@app.Availability</span>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+
+    <!-- Active projects -->
+    <div class="col-lg-5">
+        <div class="card feature-card">
+            <div class="card-body p-4">
+                <h2 class="h6 mb-3"><i class="bi bi-box-seam me-2" style="color: var(--brand-600);"></i>Active relief projects</h2>
+                @if (!Model.Projects.Any())
+                {
+                    <p class="text-muted small mb-0">No projects right now.</p>
+                }
+                else
+                {
+                    <div class="list-group list-group-flush">
+                        @foreach (var p in Model.Projects)
+                        {
+                            <div class="list-group-item px-0 d-flex align-items-start gap-3">
+                                <span class="icon-tile" style="width: 40px; height: 40px; font-size: 1rem; margin-bottom: 0; flex: 0 0 auto;"><i class="bi bi-geo-alt"></i></span>
+                                <div class="min-width-0">
+                                    <div class="fw-semibold small">@p.Name</div>
+                                    <div class="small text-muted">@p.Location</div>
+                                    <div class="small text-muted text-truncate">@p.Description</div>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Latest updates -->
+<div class="card feature-card mt-4">
+    <div class="card-body p-4">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h2 class="h6 mb-0"><i class="bi bi-newspaper me-2" style="color: var(--brand-600);"></i>Latest field updates</h2>
+            <a class="small fw-semibold" asp-area="Volunteer" asp-controller="VolunteerDashboard" asp-action="Updates">View all <i class="bi bi-arrow-right"></i></a>
+        </div>
+        @if (!Model.LatestUpdates.Any())
+        {
+            <p class="text-muted small mb-0">No updates yet.</p>
+        }
+        else
+        {
+            <div class="row g-3">
+                @foreach (var u in Model.LatestUpdates)
+                {
+                    <div class="col-md-6 col-xl-4">
+                        <div class="card update-card mb-0">
+                            <div class="update-body">
+                                <span class="badge badge-soft mb-2"><i class="bi bi-geo-alt me-1"></i>@u.ReliefProject?.Name</span>
+                                <h3 class="h6 mb-1">@u.Title</h3>
+                                <p class="small text-muted mb-2">@u.Body</p>
+                                <div class="update-meta">@u.PostedByName · @u.PostedAt.ToString("dd MMM yyyy")</div>
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+        }
+    </div>
+</div>

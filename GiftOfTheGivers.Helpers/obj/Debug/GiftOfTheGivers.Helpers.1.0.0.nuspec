@@ -1,0 +1,27 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<package xmlns="http://schemas.microsoft.com/packaging/2012/06/nuspec.xsd">
+  <metadata>
+    <id>GiftOfTheGivers.Helpers</id>
+    <version>1.0.0</version>
+    <title>Gift of the Givers Helper Library</title>
+    <authors>Gift of the Givers Foundation</authors>
+    <readme>README.md</readme>
+    <description>Custom helper library for Gift of the Givers applications. Provides utilities for Section 18A tax certificate number formatting, SARS tax deduction relief calculations, South African Rand (ZAR) currency formatting, and donation metrics aggregation.</description>
+    <tags>GiftOfTheGivers Donations Section18A TaxCertificate AzureArtifacts Helpers</tags>
+    <repository type="git" />
+    <dependencies>
+      <group targetFramework="net9.0">
+        <dependency id="Microsoft.AspNetCore.Identity" version="2.3.13" exclude="Build,Analyzers" />
+        <dependency id="Microsoft.AspNetCore.Identity.EntityFrameworkCore" version="9.0.20" exclude="Build,Analyzers" />
+        <dependency id="Microsoft.EntityFrameworkCore" version="9.0.20" exclude="Build,Analyzers" />
+        <dependency id="Microsoft.EntityFrameworkCore.SqlServer" version="9.0.20" exclude="Build,Analyzers" />
+        <dependency id="Microsoft.Extensions.DependencyInjection" version="9.0.20" exclude="Build,Analyzers" />
+      </group>
+    </dependencies>
+  </metadata>
+  <files>
+    <file src="C:\Users\masha\Downloads\Gift\GiftOfTheGivers\GiftOfTheGivers.Helpers\bin\Debug\net9.0\GiftOfTheGivers.Helpers.runtimeconfig.json" target="lib\net9.0\GiftOfTheGivers.Helpers.runtimeconfig.json" />
+    <file src="C:\Users\masha\Downloads\Gift\GiftOfTheGivers\GiftOfTheGivers.Helpers\bin\Debug\net9.0\GiftOfTheGivers.Helpers.dll" target="lib\net9.0\GiftOfTheGivers.Helpers.dll" />
+    <file src="C:\Users\masha\Downloads\Gift\GiftOfTheGivers\GiftOfTheGivers.Helpers\README.md" target="\README.md" />
+  </files>
+</package>

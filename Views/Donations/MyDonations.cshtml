@@ -1,0 +1,131 @@
+@model List<GiftOfTheGivers.Helpers.Models.Donation>
+@{
+    ViewData["Title"] = "My donations";
+    ViewData["ActivePage"] = "MyDonations";
+    var totalZar = ViewBag.TotalZar as string ?? "R 0.00";
+    var taxRelief = ViewBag.TaxReliefTotal as string ?? "R 0.00";
+    var avgZar = ViewBag.AverageZar as string ?? "R 0.00";
+    var tier = ViewBag.DonorTier as string ?? "Community Contributor";
+    var recurring = Model.Count(d => d.IsRecurring);
+}
+
+<div class="container my-4 my-lg-5">
+    <div class="d-flex flex-wrap justify-content-between align-items-end gap-2 mb-4">
+        <div>
+            <div class="d-flex align-items-center gap-2">
+                <span class="eyebrow">Your giving history</span>
+                <span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill small">
+                    <i class="bi bi-award-fill me-1"></i> @tier
+                </span>
+            </div>
+            <h1 class="h2 mt-2 mb-0">My donations</h1>
+        </div>
+        <a class="btn btn-gotg" asp-area="" asp-controller="Donations" asp-action="Create">
+            <i class="bi bi-plus-circle me-1"></i> New donation
+        </a>
+    </div>
+
+    @if (!Model.Any())
+    {
+        <div class="card feature-card">
+            <div class="card-body text-center text-muted py-5">
+                <i class="bi bi-heart display-6 d-block mb-3" style="color: var(--ink-400);"></i>
+                You haven't donated yet.
+                <a asp-area="" asp-controller="Donations" asp-action="Create">Make your first donation</a>.
+            </div>
+        </div>
+    }
+    else
+    {
+        <!-- Metric Cards (Powered by GiftOfTheGivers.Helpers) -->
+        <div class="row g-3 mb-4">
+            <div class="col-md-3">
+                <div class="card stat-card h-100">
+                    <div class="card-body">
+                        <div class="stat-icon"><i class="bi bi-heart"></i></div>
+                        <div class="stat-value">@Model.Count</div>
+                        <div class="stat-label">donations made</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card stat-card h-100">
+                    <div class="card-body">
+                        <div class="stat-icon"><i class="bi bi-cash-coin"></i></div>
+                        <div class="stat-value">@totalZar</div>
+                        <div class="stat-label">total contribution</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card stat-card h-100">
+                    <div class="card-body">
+                        <div class="stat-icon text-success"><i class="bi bi-shield-check"></i></div>
+                        <div class="stat-value text-success">@taxRelief</div>
+                        <div class="stat-label">SARS 18A tax relief (28%)</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card stat-card h-100">
+                    <div class="card-body">
+                        <div class="stat-icon"><i class="bi bi-calculator"></i></div>
+                        <div class="stat-value">@avgZar</div>
+                        <div class="stat-label">average donation</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card feature-card">
+            <div class="card-header bg-transparent d-flex justify-content-between align-items-center py-3 border-bottom">
+                <h5 class="card-title mb-0 fs-6 fw-bold">Issued Tax Certificates</h5>
+                <span class="badge bg-light text-dark border">
+                    <i class="bi bi-box-seam me-1"></i> Formatted via GiftOfTheGivers.Helpers NuGet Package
+                </span>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead>
+                        <tr>
+                            <th>Certificate / Ref</th>
+                            <th>Date</th>
+                            <th>Amount</th>
+                            <th>Type</th>
+                            <th class="text-end">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var d in Model)
+                        {
+                            <tr>
+                                <td class="fw-semibold" style="font-family: var(--font-display);">@d.ReferenceNumber</td>
+                                <td>@d.DonationDate.ToString("dd MMM yyyy")</td>
+                                <td class="fw-bold">@d.Amount.ToString("N2") @d.Currency</td>
+                                <td>
+                                    @if (d.IsRecurring)
+                                    {
+                                        <span class="badge badge-amber"><i class="bi bi-arrow-repeat me-1"></i>Monthly</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge badge-soft"><i class="bi bi-gift me-1"></i>One-time</span>
+                                    }
+                                </td>
+                                <td class="text-end">
+                                    <a class="btn btn-soft btn-sm" asp-area="" asp-controller="Donations" asp-action="Certificate" asp-route-id="@d.Id">
+                                        <i class="bi bi-file-earmark-text me-1"></i> View certificate
+                                    </a>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <p class="text-muted small mt-3 mb-0">
+            <i class="bi bi-info-circle me-1" style="color: var(--brand-600);"></i>
+            Guest donations are not linked to an account, so they don't appear here.
+        </p>
+    }
+</div>

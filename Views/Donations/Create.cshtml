@@ -1,0 +1,182 @@
+@model GiftOfTheGivers.Helpers.Models.Donation
+@{
+    ViewData["Title"] = "Donate";
+    ViewData["ActivePage"] = "Donate";
+}
+
+<div class="container my-4 my-lg-5">
+    <div class="text-center mb-4 mb-lg-5">
+        <span class="eyebrow" style="justify-content: center;">Make a difference</span>
+        <h1 class="h2 mt-2 mb-1">Make a donation</h1>
+        <p class="text-muted mb-0">
+            Every gift, big or small, reaches people in need.
+            <span class="badge badge-amber ms-1">Prototype — no real payment</span>
+        </p>
+    </div>
+
+    <div class="row g-4 justify-content-center">
+        <!-- Form -->
+        <div class="col-lg-7 col-xl-6">
+            <div class="card feature-card">
+                <div class="card-body p-4 p-md-5">
+                    <form asp-action="Create" method="post" class="needs-validation" novalidate>
+                        <div asp-validation-summary="ModelOnly" class="text-danger small"></div>
+
+                        <div class="row g-3 mb-3">
+                            <div class="col-md-6">
+                                <label asp-for="DonorName" class="form-label"></label>
+                                <div class="field-icon">
+                                    <i class="bi bi-person"></i>
+                                    <input asp-for="DonorName" class="form-control" placeholder="e.g. Thandi Mokoena" />
+                                </div>
+                                <span asp-validation-for="DonorName" class="text-danger small"></span>
+                            </div>
+                            <div class="col-md-6">
+                                <label asp-for="Email" class="form-label"></label>
+                                <div class="field-icon">
+                                    <i class="bi bi-envelope"></i>
+                                    <input asp-for="Email" class="form-control" type="email" placeholder="you@example.com" />
+                                </div>
+                                <span asp-validation-for="Email" class="text-danger small"></span>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="Amount" class="form-label d-block">Amount</label>
+                            <input asp-for="Amount" class="form-control form-control-lg" id="Amount" type="number" min="1" step="0.01" placeholder="e.g. 250" style="font-size: 1.25rem; font-weight: 700;" />
+                            <span asp-validation-for="Amount" class="text-danger small"></span>
+                            <div class="d-flex flex-wrap gap-2 mt-2" id="quickAmounts">
+                                <button type="button" class="amount-chip" data-amount="50">R50</button>
+                                <button type="button" class="amount-chip" data-amount="100">R100</button>
+                                <button type="button" class="amount-chip" data-amount="250">R250</button>
+                                <button type="button" class="amount-chip" data-amount="500">R500</button>
+                                <button type="button" class="amount-chip" data-amount="1000">R1 000</button>
+                            </div>
+                        </div>
+
+                        <div class="row g-3 mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label d-block">Currency</label>
+                                <div class="segmented" role="radiogroup" aria-label="Currency">
+                                    <input type="radio" class="segmented-input" name="Currency" value="ZAR" id="curZAR" checked />
+                                    <label for="curZAR">ZAR</label>
+                                    <input type="radio" class="segmented-input" name="Currency" value="USD" id="curUSD" />
+                                    <label for="curUSD">USD</label>
+                                    <input type="radio" class="segmented-input" name="Currency" value="EUR" id="curEUR" />
+                                    <label for="curEUR">EUR</label>
+                                </div>
+                                <span asp-validation-for="Currency" class="text-danger small"></span>
+                            </div>
+                            <div class="col-md-6 d-flex flex-column justify-content-end">
+                                <label class="form-label">Donation type</label>
+                                <div class="row g-2">
+                                    <div class="col-6">
+                                        <input type="radio" class="radio-card-input" name="IsRecurring" value="false" id="once" checked />
+                                        <label class="radio-card" for="once">
+                                            <span class="radio-card-icon"><i class="bi bi-gift"></i></span>
+                                            <span class="fw-semibold d-block small">One-time</span>
+                                            <span class="small text-muted">A single gift</span>
+                                        </label>
+                                    </div>
+                                    <div class="col-6">
+                                        <input type="radio" class="radio-card-input" name="IsRecurring" value="true" id="monthly" />
+                                        <label class="radio-card" for="monthly">
+                                            <span class="radio-card-icon"><i class="bi bi-arrow-repeat"></i></span>
+                                            <span class="fw-semibold d-block small">Monthly</span>
+                                            <span class="small text-muted">Stores the flag only</span>
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <button type="submit" class="btn btn-gotg btn-lg w-100 mt-2">
+                            <i class="bi bi-heart-fill me-1"></i> Donate now
+                        </button>
+                        <p class="text-center small text-muted mt-3 mb-0">
+                            <i class="bi bi-patch-check me-1" style="color: var(--brand-600);"></i>
+                            You'll receive a printable tax certificate immediately.
+                        </p>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Summary panel -->
+        <div class="col-lg-5 col-xl-4">
+            <div class="card feature-card sticky-lg-top" style="top: 90px;">
+                <div class="card-body p-4 p-md-5">
+                    <h2 class="h6 text-uppercase" style="letter-spacing: .1em; color: var(--ink-500);">Your gift</h2>
+                    <div class="display-5 fw-bold mt-2 mb-1" style="color: var(--brand-700);" id="previewAmount">R 0.00</div>
+                    <p class="text-muted small mb-0" id="previewType">One-time donation</p>
+
+                    <hr style="border-color: var(--line);" />
+
+                    <h3 class="h6 mb-3">What your gift does</h3>
+                    <ul class="list-unstyled small mb-4">
+                        <li class="mb-2 d-flex gap-2"><i class="bi bi-check-circle-fill" style="color: var(--brand-500);"></i> Food parcels and clean drinking water</li>
+                        <li class="mb-2 d-flex gap-2"><i class="bi bi-check-circle-fill" style="color: var(--brand-500);"></i> Blankets, warm clothing and emergency shelter</li>
+                        <li class="mb-2 d-flex gap-2"><i class="bi bi-check-circle-fill" style="color: var(--brand-500);"></i> Medical supplies and first-aid response</li>
+                        <li class="d-flex gap-2"><i class="bi bi-check-circle-fill" style="color: var(--brand-500);"></i> Rebuilding homes and community facilities</li>
+                    </ul>
+
+                    <div class="demo-box">
+                        <i class="bi bi-shield-lock me-1"></i>
+                        <strong>Prototype note:</strong> no payment details are collected;
+                        the donation is stored in the local database and a tax certificate
+                        is generated instantly.
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        (function () {
+            var amount = document.getElementById('Amount');
+            var previewAmount = document.getElementById('previewAmount');
+            var previewType = document.getElementById('previewType');
+            var symbols = { ZAR: 'R', USD: '$', EUR: '\u20AC' };
+            var chips = document.querySelectorAll('.amount-chip');
+
+            function currentCurrency() {
+                var checked = document.querySelector('input[name="Currency"]:checked');
+                return checked ? checked.value : 'ZAR';
+            }
+
+            function update() {
+                var sym = symbols[currentCurrency()] || '';
+                var val = parseFloat(amount.value);
+                previewAmount.textContent = sym + ' ' + (isNaN(val) ? '0.00' : val.toFixed(2));
+                var recurring = document.querySelector('input[name="IsRecurring"]:checked');
+                previewType.textContent = recurring && recurring.value === 'true'
+                    ? 'Monthly recurring donation'
+                    : 'One-time donation';
+            }
+
+            // Quick amount chips: set the value and re-label with the currency symbol
+            function labelChips() {
+                var sym = symbols[currentCurrency()] || '';
+                chips.forEach(function (chip) {
+                    var v = parseInt(chip.getAttribute('data-amount'), 10);
+                    chip.textContent = sym + v.toLocaleString('en-ZA');
+                });
+            }
+            chips.forEach(function (chip) {
+                chip.addEventListener('click', function () {
+                    amount.value = chip.getAttribute('data-amount');
+                    update();
+                });
+            });
+
+            amount.addEventListener('input', update);
+            document.querySelectorAll('input[name="Currency"], input[name="IsRecurring"]')
+                .forEach(function (el) { el.addEventListener('change', function () { labelChips(); update(); }); });
+
+            labelChips();
+        })();
+    </script>
+}

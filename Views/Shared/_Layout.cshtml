@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="Gift of the Givers — disaster relief begins with you. Donate, volunteer, and follow our work across South Africa." />
+    <meta name="theme-color" content="#0a3d38" />
+    <title>@ViewData["Title"] - Gift of the Givers</title>
+    <link rel="icon" type="image/svg+xml" href="~/images/logo.svg" />
+    <link rel="stylesheet" href="~/css/fonts.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/lib/bootstrap/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/lib/bootstrap-icons/bootstrap-icons.min.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+</head>
+<body>
+
+    <header>
+        <nav class="navbar navbar-expand-lg navbar-dark navbar-gotg sticky-top shadow-sm">
+            <div class="container">
+                <a class="navbar-brand d-flex align-items-center gap-2" asp-area="" asp-controller="Home" asp-action="Index">
+                    <img src="~/images/logo.svg" alt="Gift of the Givers logo" height="40" width="40" />
+                    <span>Gift of the <span style="color: var(--accent-400);">Givers</span></span>
+                </a>
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#mainNav"
+                        aria-controls="mainNav" aria-expanded="false" aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                <div class="collapse navbar-collapse" id="mainNav">
+                    <ul class="navbar-nav me-auto ms-lg-3 mb-2 mb-lg-0">
+                        <li class="nav-item">
+                            <a class="nav-link @(ViewData["ActivePage"]?.ToString() == "Home" ? "active" : "")" asp-area="" asp-controller="Home" asp-action="Index">Home</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link @(ViewData["ActivePage"]?.ToString() == "About" ? "active" : "")" asp-area="" asp-controller="Home" asp-action="About">About</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link @(ViewData["ActivePage"]?.ToString() == "Donate" ? "active" : "")" asp-area="" asp-controller="Donations" asp-action="Create">Donate</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link @(ViewData["ActivePage"]?.ToString() == "Volunteer" ? "active" : "")" asp-area="" asp-controller="Volunteers" asp-action="Create">Volunteer</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link @(ViewData["ActivePage"]?.ToString() == "Contact" ? "active" : "")" asp-area="" asp-controller="Home" asp-action="Contact">Contact</a>
+                        </li>
+                        @if (User.Identity?.IsAuthenticated == true)
+                        {
+                            <li class="nav-item">
+                                <a class="nav-link @(ViewData["ActivePage"]?.ToString() == "MyDonations" ? "active" : "")" asp-area="" asp-controller="Donations" asp-action="MyDonations">My donations</a>
+                            </li>
+                        }
+                        @if (User.IsInRole("Staff"))
+                        {
+                            <li class="nav-item">
+                                <a class="nav-link @(ViewData["ActivePage"]?.ToString() == "Dashboard" ? "active" : "")" asp-area="Staff" asp-controller="Staff" asp-action="Dashboard">Staff dashboard</a>
+                            </li>
+                        }
+                    </ul>
+                    <partial name="_LoginPartial" />
+                </div>
+            </div>
+        </nav>
+    </header>
+
+    <main role="main">
+        @RenderBody()
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container py-5">
+            <div class="row g-4">
+                <div class="col-lg-4">
+                    <div class="d-flex align-items-center gap-2 mb-3">
+                        <img src="~/images/logo.svg" alt="Gift of the Givers logo" height="40" width="40" />
+                        <span class="footer-brand">Gift of the Givers</span>
+                    </div>
+                    <p class="small">
+                        Disaster relief begins with you. We connect donors and volunteers
+                        with communities in need across South Africa — food, water,
+                        shelter and hope, delivered fast.
+                    </p>
+                    <span class="badge badge-amber">Student prototype</span>
+                </div>
+                <div class="col-6 col-lg-2">
+                    <h6>Explore</h6>
+                    <ul class="list-unstyled mb-0">
+                        <li class="mb-2"><a asp-area="" asp-controller="Home" asp-action="Index">Home</a></li>
+                        <li class="mb-2"><a asp-area="" asp-controller="Home" asp-action="About">About us</a></li>
+                        <li class="mb-2"><a asp-area="" asp-controller="Donations" asp-action="Create">Donate</a></li>
+                        <li class="mb-2"><a asp-area="" asp-controller="Volunteers" asp-action="Create">Volunteer</a></li>
+                        <li><a asp-area="" asp-controller="Home" asp-action="Contact">Contact</a></li>
+                    </ul>
+                </div>
+                <div class="col-6 col-lg-3">
+                    <h6>Get involved</h6>
+                    <ul class="list-unstyled mb-0">
+                        @if (User.Identity?.IsAuthenticated == true)
+                        {
+                            <li class="mb-2"><a asp-area="" asp-controller="Donations" asp-action="MyDonations">My donations</a></li>
+                            <li class="mb-2"><a asp-area="Identity" asp-page="/Account/Manage/Index">My account</a></li>
+                            <li>
+                                <form class="d-inline" asp-area="Identity" asp-page="/Account/Logout"
+                                      asp-route-returnUrl="@Url.Action("Index", "Home", new { area = "" })">
+                                    <button type="submit" class="btn btn-link p-0 small">Logout</button>
+                                </form>
+                            </li>
+                        }
+                        else
+                        {
+                            <li class="mb-2"><a asp-area="Identity" asp-page="/Account/Register">Create an account</a></li>
+                            <li class="mb-2"><a asp-area="Identity" asp-page="/Account/Login">Log in</a></li>
+                            <li class="mb-2"><a asp-area="" asp-controller="Donations" asp-action="Create">Donate as a guest</a></li>
+                        }
+                        @if (User.IsInRole("Staff"))
+                        {
+                            <li class="mt-2"><a asp-area="Staff" asp-controller="Staff" asp-action="Dashboard">Staff dashboard</a></li>
+                        }
+                    </ul>
+                </div>
+                <div class="col-lg-3">
+                    <h6>Contact</h6>
+                    <div class="f-item"><i class="bi bi-envelope"></i><span>info@gotg.example</span></div>
+                    <div class="f-item"><i class="bi bi-telephone"></i><span>+27 (0)11 000 0000</span></div>
+                    <div class="f-item"><i class="bi bi-geo-alt"></i><span>12 Hope Street, Johannesburg</span></div>
+                    <div class="f-item"><i class="bi bi-clock"></i><span>Mon–Fri 08:00–17:00</span></div>
+                </div>
+            </div>
+        </div>
+        <div class="footer-bottom py-3">
+            <div class="container d-flex flex-wrap justify-content-between align-items-center gap-2 small">
+                <span>&copy; @DateTime.Now.Year Gift of the Givers. Student prototype — not affiliated with the real foundation.</span>
+                <span class="d-inline-flex align-items-center gap-1"><i class="bi bi-heart-fill" style="color: var(--accent-400);"></i> Built for the community</span>
+            </div>
+        </div>
+    </footer>
+
+    <button id="backToTop" class="back-to-top" type="button" aria-label="Back to top">
+        <i class="bi bi-arrow-up"></i>
+    </button>
+
+    <script src="~/lib/jquery/jquery.min.js"></script>
+    <script src="~/lib/bootstrap/js/bootstrap.bundle.min.js"></script>
+    <script src="~/js/site.js" asp-append-version="true"></script>
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

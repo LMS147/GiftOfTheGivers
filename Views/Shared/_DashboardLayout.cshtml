@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="robots" content="noindex" />
+    <title>@ViewData["Title"] - Gift of the Givers</title>
+    <link rel="icon" type="image/svg+xml" href="~/images/logo.svg" />
+    <link rel="stylesheet" href="~/css/fonts.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/lib/bootstrap/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/lib/bootstrap-icons/bootstrap-icons.min.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+</head>
+<body class="dash-body">
+
+    <div class="dash-shell">
+        <!-- Desktop sidebar -->
+        <aside class="dash-sidebar d-none d-lg-block">
+            <partial name="_DashboardSidebar" />
+        </aside>
+
+        <!-- Main column -->
+        <div class="dash-main">
+            <header class="dash-topbar">
+                <button class="btn btn-soft d-lg-none" type="button" data-bs-toggle="offcanvas"
+                        data-bs-target="#dashOffcanvas" aria-controls="dashOffcanvas" aria-label="Open menu">
+                    <i class="bi bi-list"></i>
+                </button>
+                <h1 class="dash-title">@ViewData["Title"]</h1>
+                <div class="ms-auto d-flex align-items-center gap-2">
+                    <span class="d-none d-sm-inline-flex align-items-center gap-2 me-2">
+                        <span class="avatar">@(User.Identity?.Name?.TrimStart().FirstOrDefault().ToString().ToUpperInvariant() ?? "?")</span>
+                        <span class="small fw-semibold text-muted">@User.Identity?.Name</span>
+                    </span>
+                    <span class="badge @(User.IsInRole("Staff") ? "badge-amber" : "badge-soft")">
+                        <i class="bi @(User.IsInRole("Staff") ? "bi-shield-lock" : "bi-person-check") me-1"></i>
+                        @(User.IsInRole("Staff") ? "Staff" : "Volunteer")
+                    </span>
+                </div>
+            </header>
+
+            <main class="dash-content">
+                <div class="container-fluid px-3 px-lg-4 py-4">
+                    @RenderBody()
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <!-- Mobile sidebar (offcanvas) -->
+    <div class="offcanvas offcanvas-start dash-offcanvas d-lg-none" tabindex="-1" id="dashOffcanvas" aria-labelledby="dashOffcanvasLabel">
+        <div class="offcanvas-header">
+            <span class="fw-bold text-white" id="dashOffcanvasLabel"><i class="bi bi-speedometer2 me-2"></i>Dashboard</span>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+        </div>
+        <div class="offcanvas-body p-0">
+            <partial name="_DashboardSidebar" />
+        </div>
+    </div>
+
+    <script src="~/lib/jquery/jquery.min.js"></script>
+    <script src="~/lib/bootstrap/js/bootstrap.bundle.min.js"></script>
+    <script src="~/js/site.js" asp-append-version="true"></script>
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

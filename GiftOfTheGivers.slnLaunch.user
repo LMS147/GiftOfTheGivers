@@ -1,0 +1,15 @@
+[
+  {
+    "Name": "New Profile",
+    "Projects": [
+      {
+        "Path": "GiftOfTheGivers.csproj",
+        "Action": "Start"
+      },
+      {
+        "Path": "GiftOfTheGivers.Functions\\GiftOfTheGivers.Functions.csproj",
+        "Action": "Start"
+      }
+    ]
+  }
+]

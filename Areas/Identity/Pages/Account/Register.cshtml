@@ -1,0 +1,90 @@
+@page
+@model RegisterModel
+@{
+    ViewData["Title"] = "Register";
+}
+
+<div class="auth-shell">
+    <div class="auth-card">
+        <div class="auth-brand">
+            <img src="~/images/logo.svg" alt="Gift of the Givers logo" height="64" width="64" />
+            <h1 class="h4 mt-3 mb-1">Create your account</h1>
+            <p class="text-muted small mb-0">
+                Register as a <strong>Donor</strong> — it takes less than a minute.
+            </p>
+        </div>
+
+        <div class="auth-body">
+            <form id="registerForm" asp-route-returnUrl="@Model.ReturnUrl" method="post" class="needs-validation" novalidate>
+                <div asp-validation-summary="ModelOnly" class="text-danger small" role="alert"></div>
+
+                <div class="mb-3">
+                    <label asp-for="Input.Email" class="form-label"></label>
+                    <div class="field-icon">
+                        <i class="bi bi-envelope"></i>
+                        <input asp-for="Input.Email" class="form-control" autocomplete="username" aria-required="true" placeholder="name@example.com" />
+                    </div>
+                    <span asp-validation-for="Input.Email" class="text-danger small"></span>
+                </div>
+                <div class="mb-3">
+                    <label asp-for="Input.Password" class="form-label"></label>
+                    <div class="field-icon">
+                        <i class="bi bi-lock"></i>
+                        <input asp-for="Input.Password" class="form-control" autocomplete="new-password" aria-required="true" placeholder="At least 6 characters" />
+                    </div>
+                    <span asp-validation-for="Input.Password" class="text-danger small"></span>
+                </div>
+                <div class="mb-3">
+                    <label asp-for="Input.ConfirmPassword" class="form-label"></label>
+                    <div class="field-icon">
+                        <i class="bi bi-lock-fill"></i>
+                        <input asp-for="Input.ConfirmPassword" class="form-control" autocomplete="new-password" aria-required="true" placeholder="Repeat your password" />
+                    </div>
+                    <span asp-validation-for="Input.ConfirmPassword" class="text-danger small"></span>
+                </div>
+
+                <div class="mb-4">
+                    <label class="form-label d-block">@Html.DisplayNameFor(m => m.Input.Role)</label>
+                    <div class="row g-2">
+                        <div class="col-6">
+                            <input type="radio" class="radio-card-input" name="Input.Role" value="Donor" id="roleDonor" checked />
+                            <label class="radio-card" for="roleDonor">
+                                <span class="radio-card-icon"><i class="bi bi-gift"></i></span>
+                                <span class="fw-semibold d-block small">Donor</span>
+                                <span class="small text-muted">I want to donate</span>
+                            </label>
+                        </div>
+                        <div class="col-6">
+                            <input type="radio" class="radio-card-input" name="Input.Role" value="Volunteer" id="roleVolunteer" />
+                            <label class="radio-card" for="roleVolunteer">
+                                <span class="radio-card-icon"><i class="bi bi-people"></i></span>
+                                <span class="fw-semibold d-block small">Volunteer</span>
+                                <span class="small text-muted">I want to help on the ground</span>
+                            </label>
+                        </div>
+                    </div>
+                    <span asp-validation-for="Input.Role" class="text-danger small"></span>
+                </div>
+
+                <button id="registerSubmit" type="submit" class="w-100 btn btn-gotg btn-lg">
+                    <i class="bi bi-person-plus me-1"></i> Register
+                </button>
+            </form>
+
+            <p class="text-center small mt-3 mb-0">
+                Already have an account?
+                <a asp-page="./Login" asp-route-returnUrl="@Model.ReturnUrl">Log in</a>
+            </p>
+
+            <div class="demo-box mt-4">
+                <i class="bi bi-shield-check me-1"></i>
+                Volunteers get their own dashboard as soon as they register.
+                Staff accounts are created by the organisation.
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

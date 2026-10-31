@@ -1,0 +1,14 @@
+C:\Users\masha\Downloads\Gift\GiftOfTheGivers\GiftOfTheGivers.Helpers\bin\Debug\net9.0\GiftOfTheGivers.Helpers.deps.json
+C:\Users\masha\Downloads\Gift\GiftOfTheGivers\GiftOfTheGivers.Helpers\bin\Debug\net9.0\GiftOfTheGivers.Helpers.dll
+C:\Users\masha\Downloads\Gift\GiftOfTheGivers\GiftOfTheGivers.Helpers\bin\Debug\net9.0\GiftOfTheGivers.Helpers.pdb
+C:\Users\masha\Downloads\Gift\GiftOfTheGivers\GiftOfTheGivers.Helpers\obj\Debug\net9.0\GiftOfTheGivers.Helpers.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\masha\Downloads\Gift\GiftOfTheGivers\GiftOfTheGivers.Helpers\obj\Debug\net9.0\GiftOfTheGivers.Helpers.AssemblyInfoInputs.cache
+C:\Users\masha\Downloads\Gift\GiftOfTheGivers\GiftOfTheGivers.Helpers\obj\Debug\net9.0\GiftOfTheGivers.Helpers.AssemblyInfo.cs
+C:\Users\masha\Downloads\Gift\GiftOfTheGivers\GiftOfTheGivers.Helpers\obj\Debug\net9.0\GiftOfTheGivers.Helpers.csproj.CoreCompileInputs.cache
+C:\Users\masha\Downloads\Gift\GiftOfTheGivers\GiftOfTheGivers.Helpers\obj\Debug\net9.0\GiftOfTheGivers.Helpers.dll
+C:\Users\masha\Downloads\Gift\GiftOfTheGivers\GiftOfTheGivers.Helpers\obj\Debug\net9.0\refint\GiftOfTheGivers.Helpers.dll
+C:\Users\masha\Downloads\Gift\GiftOfTheGivers\GiftOfTheGivers.Helpers\obj\Debug\net9.0\GiftOfTheGivers.Helpers.pdb
+C:\Users\masha\Downloads\Gift\GiftOfTheGivers\GiftOfTheGivers.Helpers\obj\Debug\net9.0\ref\GiftOfTheGivers.Helpers.dll
+C:\Users\masha\Downloads\Gift\GiftOfTheGivers\GiftOfTheGivers.Helpers\obj\Debug\net9.0\GiftOfTheGivers.Helpers.csproj.AssemblyReference.cache
+C:\Users\masha\Downloads\Gift\GiftOfTheGivers\GiftOfTheGivers.Helpers\bin\Debug\net9.0\GiftOfTheGivers.Helpers.runtimeconfig.json
+C:\Users\masha\Downloads\Gift\GiftOfTheGivers\GiftOfTheGivers.Helpers\obj\Debug\net9.0\GiftOfTheGivers.Helpers.genruntimeconfig.cache

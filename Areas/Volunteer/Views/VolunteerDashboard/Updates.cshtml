@@ -1,0 +1,40 @@
+@model List<GiftOfTheGivers.Helpers.Models.ProjectUpdate>
+@{
+    ViewData["Title"] = "Relief Updates";
+    ViewData["NavActive"] = "updates";
+}
+
+<h1 class="h4 mb-4">Relief updates</h1>
+
+<div class="card feature-card">
+    @if (!Model.Any())
+    {
+        <div class="card-body text-center text-muted py-5">
+            <i class="bi bi-newspaper display-6 d-block mb-3" style="color: var(--ink-400);"></i>
+            No updates from the field yet.
+        </div>
+    }
+    else
+    {
+        <div class="card-body p-4">
+            <div class="row g-3">
+                @foreach (var u in Model)
+                {
+                    <div class="col-md-6 col-xl-4">
+                        <div class="card update-card mb-0">
+                            <div class="update-body">
+                                <span class="badge badge-soft mb-2"><i class="bi bi-geo-alt me-1"></i>@u.ReliefProject?.Name</span>
+                                <h2 class="h6 mb-1">@u.Title</h2>
+                                <p class="small text-muted mb-2">@u.Body</p>
+                                <div class="update-meta">
+                                    <span class="avatar" style="width: 24px; height: 24px; font-size: .62rem;">@(u.PostedByName?.FirstOrDefault().ToString().ToUpperInvariant() ?? "S")</span>
+                                    @u.PostedByName · @u.PostedAt.ToString("dd MMM yyyy")
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+    }
+</div>
