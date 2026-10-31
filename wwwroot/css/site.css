@@ -898,3 +898,53 @@ footer.footer .f-item i { color: var(--brand-400); margin-top: .15rem; }
 .dash-nav-section { color: rgba(255, 255, 255, .72); }
 .btn-gotg { background: linear-gradient(135deg, #0b6b5d, #087a6c); }
 .filter-bar select { min-width: 160px; }
+
+/* Donor workspace */
+.donor-welcome {
+    display: flex; justify-content: space-between; align-items: center; gap: 24px;
+    padding: 32px; margin-bottom: 30px; border-radius: 20px;
+    color: #fff; background: linear-gradient(120deg, #083b34, #146558);
+}
+.donor-welcome h2 { color: #fff; font-size: clamp(1.55rem, 2.5vw, 2.1rem); margin: 10px 0; overflow-wrap: anywhere; }
+.donor-welcome p { color: #d0e8dd; margin: 0; }
+.donor-welcome .eyebrow { color: #f7d681; }
+.donor-welcome .btn { flex-shrink: 0; }
+.donor-section-heading { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px; margin-bottom: 22px; }
+.donor-currency-form { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.donor-currency-form select { width: 100px; }
+.donor-stat { background: #fff; border: 1px solid #dce7e0; border-radius: 16px; padding: 22px; height: 100%; }
+.donor-stat-icon { width: 40px; height: 40px; border-radius: 12px; background: #edf7f1; color: #176b54; display: inline-grid; place-items: center; font-size: 1.1rem; flex-shrink: 0; }
+.donor-stat p { font-size: .82rem; color: #52695e; margin: 16px 0 8px; }
+.donor-stat strong { display: block; font-size: clamp(1.6rem, 2vw, 2rem); letter-spacing: -.04em; color: #113c2f; overflow-wrap: anywhere; }
+.donor-stat>span:last-child, .donor-stat>a { display: block; font-size: .75rem; color: #52695e; margin-top: 8px; }
+.donor-stat>a { color: #096248; font-weight: 600; }
+.donor-panel { padding: 26px; border-radius: 18px; border-color: #dce7e0; min-width: 0; }
+.donor-chart { display: flex; gap: 16px; padding-top: 16px; margin-bottom: 12px; }
+.donor-chart-column { flex: 1; min-width: 0; text-align: center; color: #60766a; font-size: .75rem; }
+.donor-chart-track { height: 170px; border-bottom: 1px solid #dce7e0; display: flex; align-items: flex-end; justify-content: center; margin-bottom: 12px; background: repeating-linear-gradient(to top, transparent 0, transparent 55px, #f0f4f1 56px, transparent 57px); }
+.donor-chart-bar { width: 44px; max-width: 80%; min-height: 4px; border-radius: 7px 7px 0 0; background: linear-gradient(#269a77, #0c6652); }
+.donor-chart-bar.is-empty { background: #dce9e0; }
+.donor-receipt-panel { display: flex; flex-direction: column; }
+.donor-receipt-panel .donor-section-heading>i { font-size: 1.4rem; color: #39846b; }
+.donor-receipt-amount { font-size: 1.9rem; color: #104e3b; margin: 14px 0; overflow-wrap: anywhere; }
+.donor-secondary-link { display: inline-block; margin-top: 12px; font-size: .85rem; font-weight: 600; color: #0b684b; text-align: center; }
+.donor-reference { overflow-wrap: anywhere; }
+.donor-table td:first-child { min-width: 210px; }
+.donor-mini-empty { text-align: center; padding: 24px 10px; color: #60766a; }
+.donor-mini-empty>i { font-size: 2rem; display: block; color: #59967a; margin-bottom: 14px; }
+.donor-project-link, .donor-update-link { display: flex; align-items: center; gap: 14px; padding: 16px 0; color: #193f30; border-top: 1px solid #e7eee8; }
+.donor-project-link strong, .donor-update-link strong { display: block; font-size: .9rem; }
+.donor-project-link small, .donor-update-link small { display: block; color: #60766a; margin-top: 5px; }
+.donor-project-link>span:nth-child(2), .donor-update-link>span:nth-child(2) { min-width: 0; overflow-wrap: anywhere; }
+.donor-update-dot { width: 9px; height: 9px; background: #c5d5cb; border-radius: 50%; flex-shrink: 0; }
+.donor-update-dot.unread { background: #178560; }
+@media(max-width:767px) {
+    .donor-welcome { align-items: flex-start; flex-direction: column; padding: 24px; gap: 18px; }
+    .donor-panel { padding: 20px; }
+    .donor-stat { padding: 18px; }
+    .donor-currency-form { width: 100%; }
+    .donor-currency-form label { width: 100%; }
+    .donor-currency-form select { flex: 1; width: auto; }
+    .donor-chart { gap: 8px; }
+    .donor-chart-track { height: 145px; }
+}

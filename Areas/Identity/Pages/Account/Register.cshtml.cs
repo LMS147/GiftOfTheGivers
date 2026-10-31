@@ -101,6 +101,8 @@ namespace GiftOfTheGivers.Areas.Identity.Pages.Account
                     if (Input.Role == "Volunteer")
                         return RedirectToAction("Dashboard", "VolunteerDashboard", new { area = "Volunteer" });
 
+                    if (Input.Role == "Donor" && returnUrl == Url.Content("~/"))
+                        return RedirectToAction("Index", "Donor", new { area = "" });
                     return LocalRedirect(returnUrl);
                 }
 

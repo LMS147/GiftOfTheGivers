@@ -1,5 +1,5 @@
 @model GiftOfTheGivers.Helpers.Models.ViewModels.PagedResult<GiftOfTheGivers.Helpers.Models.Notification>
-@{ViewData["Title"]="Notifications";}
+@{ViewData["Title"]="Notifications";ViewData["NavActive"]="notifications";Layout="_DashboardLayout";}
 <div class="container py-5"><span class="eyebrow">Stay informed</span><h1 class="h2 mt-2 mb-4">Your notifications</h1>
 @if(Model.Items.Count==0){<div class="empty-state"><i class="bi bi-bell" aria-hidden="true"></i><h2 class="h5">You're all caught up</h2><p>Application decisions and contribution confirmations will appear here.</p></div>}
 @foreach(var item in Model.Items){<article class="card notification-card @(item.ReadAtUtc==null?"unread":"") p-4 mb-3"><div class="d-flex flex-wrap gap-3 justify-content-between"><div><p class="small text-muted mb-2">@item.CreatedAtUtc.ToString("dd MMM yyyy, HH:mm") UTC @if(item.ReadAtUtc==null){<span class="badge badge-soft ms-2">Unread</span>}</p><h2 class="h5">@item.Subject</h2><p class="mb-0">@item.Body</p></div>@if(item.ReadAtUtc==null){<form asp-action="MarkRead" method="post"><input type="hidden" name="id" value="@item.Id" /><button class="btn btn-soft btn-sm">Mark as read</button></form>}</div></article>}

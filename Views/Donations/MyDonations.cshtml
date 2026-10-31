@@ -1,8 +1,41 @@
 @model GiftOfTheGivers.Helpers.Models.ViewModels.DonorDashboardViewModel
-@{ViewData["Title"]="My contributions";ViewData["ActivePage"]="MyDonations";}
-<section class="page-heading"><div class="container"><span class="eyebrow">Your contribution history</span><h1>Your support, in one place</h1><p>Review your demo records and download receipts.</p></div></section><div class="container py-5"><div class="section-toolbar"><p class="demo-note mb-0">@Model.ContributionCount demo records · @Model.RecurringCount monthly preferences · No payments collected</p><a asp-action="Create" class="btn btn-gotg">New contribution</a></div>
-<div class="row g-3 mb-4">@foreach(var total in Model.Totals){<div class="col-md-4"><div class="card stat-card p-4"><span class="eyebrow">@total.Currency contributions</span><strong class="h3 mt-2">@total.Currency @total.Total.ToString("N2")</strong><span class="small text-muted">@total.Count records · Average @total.Average.ToString("N2")</span></div></div>}</div>
-<form method="get" class="filter-bar mb-4"><div><label for="currency" class="form-label">Currency</label><select id="currency" name="currency" class="form-select"><option value="">All currencies</option>@foreach(var currency in new[]{"ZAR","USD","EUR"}){<option selected="@(Context.Request.Query["currency"]==currency)">@currency</option>}</select></div><button class="btn btn-gotg">Apply</button><a asp-action="MyDonations" class="btn btn-soft">Reset</a></form>
-@if(Model.Donations.Items.Count==0){<div class="empty-state"><i class="bi bi-heart" aria-hidden="true"></i><h2 class="h4">Your contribution story starts here</h2><p>Record a demo contribution to see its receipt and project here.</p><a asp-controller="Projects" asp-action="Index" class="btn btn-gotg">Explore projects</a></div>}
-else{<div class="card table-responsive"><table class="table align-middle mb-0"><thead><tr><th>Reference / Project</th><th>Date</th><th>Amount</th><th>Preference</th><th>Receipt</th></tr></thead><tbody>@foreach(var item in Model.Donations.Items){<tr><td><strong>@item.ReferenceNumber</strong><div class="small text-muted">@(item.ReliefProject?.Name??"General relief fund")</div></td><td>@item.DonationDate.ToString("dd MMM yyyy")</td><td class="fw-bold text-nowrap">@item.Currency @item.Amount.ToString("N2")</td><td>@(item.IsRecurring?"Monthly preference":"One-time")</td><td><a asp-action="Certificate" asp-route-id="@item.Id" class="btn btn-soft btn-sm">View</a> <a asp-action="Download" asp-route-id="@item.Id" class="btn btn-soft btn-sm">PDF</a></td></tr>}</tbody></table></div>}
-<partial name="_Pagination" model="Model.Donations" /><p class="small text-muted mt-3">Guest submissions are not linked to your account. Totals are grouped by currency; no exchange rates are applied.</p></div>
+@{
+    Layout = "_DashboardLayout";
+    ViewData["Title"] = "Contribution history";
+    ViewData["NavActive"] = "contributions";
+}
+<div class="donor-section-heading mb-4">
+    <div><span class="eyebrow">Your records</span><h2 class="h3 mt-2 mb-1">Contribution history</h2><p class="text-muted mb-0">Find previous contributions and download your receipts.</p></div>
+    <a class="btn btn-gotg" asp-action="Create"><i class="bi bi-plus-lg me-2" aria-hidden="true"></i>New contribution</a>
+</div>
+<div class="row g-3 mb-4">
+    @foreach (var total in Model.Totals)
+    {
+        <div class="col-md-4"><section class="donor-stat"><p>All-time recorded · @total.Currency</p><strong>@total.Currency @total.Total.ToString("N2")</strong><span>@total.Count contributions · Average @total.Average.ToString("N2")</span></section></div>
+    }
+</div>
+<form method="get" class="filter-bar mb-4" role="search">
+    <div class="flex-grow-1"><label for="history-search" class="form-label">Search contributions</label><input id="history-search" name="q" value="@Context.Request.Query["q"]" class="form-control" placeholder="Reference or project" /></div>
+    <div><label for="history-currency" class="form-label">Currency</label><select id="history-currency" name="currency" class="form-select"><option value="">All currencies</option>@foreach (var currency in new[] { "ZAR", "USD", "EUR" }) { <option selected="@(Context.Request.Query["currency"] == currency)">@currency</option> }</select></div>
+    <div><label for="history-from" class="form-label">From</label><input id="history-from" name="from" type="date" value="@Context.Request.Query["from"]" class="form-control" /></div>
+    <div><label for="history-to" class="form-label">To</label><input id="history-to" name="to" type="date" value="@Context.Request.Query["to"]" class="form-control" /></div>
+    <button type="submit" class="btn btn-gotg">Apply filters</button><a asp-action="MyDonations" class="btn btn-soft">Reset</a>
+</form>
+@if (Model.Donations.Items.Count == 0)
+{
+    <div class="empty-state"><i class="bi bi-receipt" aria-hidden="true"></i><h2 class="h5">No contributions to show</h2><p>Try clearing your filters, or choose a project for your first contribution.</p><a asp-controller="Projects" asp-action="Index" class="btn btn-gotg">Explore projects</a></div>
+}
+else
+{
+    <section class="card donor-panel">
+        <div class="donor-section-heading"><h2 class="h5 mb-0">Your contributions</h2><span class="small text-muted">@Model.Donations.TotalCount matching records</span></div>
+        <div class="table-responsive"><table class="table align-middle mb-0"><caption class="visually-hidden">Your contribution history</caption><thead><tr><th scope="col">Project / Reference</th><th scope="col">Date</th><th scope="col">Amount</th><th scope="col">Preference</th><th scope="col">Receipt</th></tr></thead><tbody>
+        @foreach (var item in Model.Donations.Items)
+        {
+            <tr><td><strong>@(item.ReliefProject?.Name ?? "General relief fund")</strong><div class="small text-muted donor-reference">@item.ReferenceNumber</div></td><td class="text-nowrap">@item.DonationDate.ToString("dd MMM yyyy")</td><td class="fw-bold text-nowrap">@item.Currency @item.Amount.ToString("N2")</td><td>@(item.IsRecurring ? "Monthly preference" : "One-time")</td><td class="text-nowrap"><a asp-action="Certificate" asp-route-id="@item.Id" class="btn btn-soft btn-sm">View</a> <a asp-action="Download" asp-route-id="@item.Id" class="btn btn-soft btn-sm" aria-label="Download receipt @item.ReferenceNumber">PDF <i class="bi bi-download ms-1" aria-hidden="true"></i></a></td></tr>
+        }
+        </tbody></table></div>
+    </section>
+}
+<partial name="_Pagination" model="Model.Donations" />
+<p class="small text-muted mt-3">History includes contributions linked to your account. Each currency is totalled separately.</p>

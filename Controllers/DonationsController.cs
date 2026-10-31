@@ -128,13 +128,24 @@ public class DonationsController(ApplicationDbContext db, SubmissionAccessServic
         return RedirectToAction(nameof(Index));
     }
     [Authorize]
-    public async Task<IActionResult> MyDonations(int page = 1, string? currency = null)
+    public async Task<IActionResult> MyDonations(int page = 1, string? currency = null, string? q = null, DateTime? from = null, DateTime? to = null)
     {
         var id = User.FindFirstValue(ClaimTypes.NameIdentifier);
         var mine = db.Donations.AsNoTracking().Where(d => d.DonorId == id);
         var summary = await mine.Select(d => new { d.Currency, d.Amount, d.IsRecurring }).ToListAsync();
         var filtered = mine.Include(d => d.ReliefProject).AsQueryable();
         if (!string.IsNullOrWhiteSpace(currency)) filtered = filtered.Where(d => d.Currency == currency);
+        if (!string.IsNullOrWhiteSpace(q))
+        {
+            var term = q.Trim().ToLowerInvariant();
+            filtered = filtered.Where(d => d.ReferenceNumber.ToLower().Contains(term) || (d.ReliefProject != null && d.ReliefProject.Name.ToLower().Contains(term)));
+        }
+        if (from != null) filtered = filtered.Where(d => d.DonationDate >= from.Value.Date);
+        if (to != null && to.Value.Date < DateTime.MaxValue.Date)
+        {
+            var end = to.Value.Date.AddDays(1);
+            filtered = filtered.Where(d => d.DonationDate < end);
+        }
         return View(new DonorDashboardViewModel
         {
             Donations = await ExperienceService.PageAsync(filtered.OrderByDescending(d => d.DonationDate).ThenByDescending(d => d.Id), page),

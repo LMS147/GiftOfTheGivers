@@ -31,7 +31,7 @@ public class UiSmokeTests
             services.AddDbContext<ApplicationDbContext>(o => o.UseInMemoryDatabase(dbName));
             services.AddIdentity<IdentityUser, IdentityRole>().AddEntityFrameworkStores<ApplicationDbContext>().AddDefaultUI();
             services.AddAuthentication(o => { o.DefaultScheme = "test"; o.DefaultAuthenticateScheme = "test"; o.DefaultChallengeScheme = "test"; o.DefaultForbidScheme = "test"; }).AddScheme<AuthenticationSchemeOptions, UiAuthentication>("test", _ => { });
-            services.AddAuthorization(); services.AddScoped<ExperienceService>(); services.AddSingleton<SubmissionAccessService>(); services.AddSingleton<DonationReviewService>();
+            services.AddAuthorization(); services.AddScoped<ExperienceService>(); services.AddScoped<DonorDashboardService>(); services.AddSingleton<SubmissionAccessService>(); services.AddSingleton<DonationReviewService>();
             services.AddHttpClient<ITaxCertificateService, TaxCertificateService>();
             services.AddControllersWithViews().AddApplicationPart(typeof(DonationsController).Assembly);
             services.AddRazorPages().AddApplicationPart(typeof(DonationsController).Assembly);
@@ -61,13 +61,19 @@ public class UiSmokeTests
             await db.SaveChangesAsync();
         }
         var client = server.CreateClient();
-        foreach (var screen in new[] { ("/", "home", ""), ("/Projects", "projects", ""), ("/Projects/Details/1", "project-detail", ""), ("/Donations/Create", "donate", ""), ("/Staff", "staff", "Staff"), ("/Staff/Volunteers", "applications", "Staff"), ("/Staff/Donations", "records", "Staff"), ("/Staff/Projects", "manage-projects", "Staff"), ("/Staff/Diagnostics", "diagnostics", "Staff"), ("/Donations/MyDonations", "donor", "Donor"), ("/Volunteer/MyApplication", "volunteer", "Volunteer") })
+        foreach (var screen in new[] { ("/", "home", ""), ("/Projects", "projects", ""), ("/Projects/Details/1", "project-detail", ""), ("/Donations/Create", "donate", ""), ("/Staff", "staff", "Staff"), ("/Staff/Volunteers", "applications", "Staff"), ("/Staff/Donations", "records", "Staff"), ("/Staff/Projects", "manage-projects", "Staff"), ("/Staff/Diagnostics", "diagnostics", "Staff"), ("/Donor", "donor-overview", "Donor"), ("/Donations/MyDonations", "donor-history", "Donor"), ("/Donations/Create", "donor-new-contribution", "Donor"), ("/Volunteer/MyApplication", "volunteer", "Volunteer") })
         {
             client.DefaultRequestHeaders.Remove("X-Test-Role");
             if (screen.Item3 != "") client.DefaultRequestHeaders.Add("X-Test-Role", screen.Item3);
             var response = await client.GetAsync(screen.Item1);
             Assert.True(response.StatusCode == HttpStatusCode.OK, $"{screen.Item1}: {response.StatusCode} -> {response.Headers.Location}");
             var html = await response.Content.ReadAsStringAsync(); Assert.Contains("main-content", html);
+            if (screen.Item3 == "Donor")
+            {
+                Assert.Contains("Donor dashboard", html);
+                Assert.DoesNotContain("Volunteer dashboard", html);
+                Assert.DoesNotContain("Student prototype · No real payment is collected.", html);
+            }
             var output = Environment.GetEnvironmentVariable("UI_SNAPSHOT_DIRECTORY");
             if (output != null) { Directory.CreateDirectory(output); await File.WriteAllTextAsync(Path.Combine(output, screen.Item2 + ".html"), html); }
         }
@@ -86,7 +92,9 @@ public class UiSmokeTests
         var cookie = string.Join("; ", submitted.Headers.GetValues("Set-Cookie").Select(c => c.Split(';')[0]));
         client.DefaultRequestHeaders.Remove("Cookie"); client.DefaultRequestHeaders.Add("Cookie", cookie);
         var confirmation = await client.GetAsync(location); Assert.Equal(HttpStatusCode.OK, confirmation.StatusCode);
-        Assert.DoesNotContain("Azure Function Response", await confirmation.Content.ReadAsStringAsync());
+        var confirmationHtml = await confirmation.Content.ReadAsStringAsync();
+        Assert.DoesNotContain("Azure Function Response", confirmationHtml);
+        Assert.DoesNotContain("Student prototype · No payment processed. Not a valid tax certificate. Not affiliated with the real foundation.", confirmationHtml);
         var id = location.Split('/').Last();
         var pdf = await client.GetAsync("/Donations/Download/" + id); Assert.Equal("application/pdf", pdf.Content.Headers.ContentType!.MediaType);
         Assert.StartsWith("%PDF-", System.Text.Encoding.ASCII.GetString(await pdf.Content.ReadAsByteArrayAsync()));
