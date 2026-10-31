@@ -22,8 +22,8 @@ public class SeleniumUiTests(AssignmentEnvironment environment, ITestOutputHelpe
             Capture(browser, "A4-employee-login-form.png");
             browser.FindElement(By.CssSelector("#account button[type='submit']")).Click();
             Wait(browser).Until(driver => new Uri(driver.Url).AbsolutePath.StartsWith("/Staff", StringComparison.OrdinalIgnoreCase));
-            Assert.Contains("Staff", browser.FindElement(By.CssSelector(".dash-role-badge")).Text);
-            Assert.Contains("Volunteer applications", browser.FindElement(By.CssSelector(".dash-sidebar")).Text);
+            Assert.Contains("Staff", browser.FindElement(By.CssSelector(".dash-role-badge")).Text, StringComparison.OrdinalIgnoreCase);
+            Assert.Contains("Volunteer applications", browser.FindElement(By.CssSelector(".dash-sidebar")).Text, StringComparison.OrdinalIgnoreCase);
             Capture(browser, "A4-employee-dashboard-passed.png");
             output.WriteLine("PASS: employee signed in with a real Identity cookie and reached the Staff dashboard.");
         }
@@ -41,7 +41,7 @@ public class SeleniumUiTests(AssignmentEnvironment environment, ITestOutputHelpe
             browser.FindElement(By.Id("DonorName")).SendKeys("Selenium Anonymous Donor");
             browser.FindElement(By.Id("Email")).SendKeys(email);
             var amount = browser.FindElement(By.Id("Amount")); amount.Clear(); amount.SendKeys("250.50");
-            new SelectElement(browser.FindElement(By.Id("Currency"))).SelectByValue("ZAR");
+            new SelectElement(browser.FindElement(By.Id("Currency"))).SelectByText("ZAR");
             new SelectElement(browser.FindElement(By.Id("ReliefProjectId"))).SelectByValue(environment.ProjectId.ToString());
             Capture(browser, "A4-anonymous-donation-form.png");
             browser.FindElement(By.CssSelector("form[action*='Review'] button[type='submit']")).Click();
