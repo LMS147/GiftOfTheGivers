@@ -31,6 +31,8 @@
   <ItemGroup>
     <Compile Remove="GiftOfTheGivers.Tests\**" />
     <Content Remove="GiftOfTheGivers.Tests\**" />
+    <Content Remove="GiftOfTheGivers.Functions\**" />
+    <Content Remove="GiftOfTheGivers.Helpers\**" />
     <Compile Remove="GiftOfTheGivers.Functions\**" />
     <Compile Remove="GiftOfTheGivers.Helpers\**" />
     <EmbeddedResource Remove="GiftOfTheGivers.Functions\**" />

@@ -93,10 +93,10 @@ public class StaffController : Controller
 
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> PostUpdate([Bind("ReliefProjectId,Title,Body")] ProjectUpdate update)
+    public async Task<IActionResult> PostUpdate([Bind("ReliefProjectId,Title,Body", Prefix = "NewUpdate")] ProjectUpdate update)
     {
         if (!await _db.ReliefProjects.AnyAsync(p => p.Id == update.ReliefProjectId))
-            ModelState.AddModelError(nameof(update.ReliefProjectId), "Choose an existing project.");
+            ModelState.AddModelError("NewUpdate.ReliefProjectId", "Choose an existing project.");
         if (!ModelState.IsValid)
         {
             // Redisplay with validation messages
