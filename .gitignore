@@ -6,3 +6,6 @@
 *.suo
 **/local.settings.json
 TestResults/
+
+.evidence-tools/
+**/__pycache__/

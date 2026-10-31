@@ -155,3 +155,7 @@ Behavior and troubleshooting:
 - `WeakPassword` or `InvalidEmail` means the settings need correction. The publicly documented demo password `Password123!` is rejected for this setup. Identity validation failures report error codes without credentials. Setup failures are logged without taking the website offline.
 - Creation, role assignment and audit changes use one transaction on SQL Server. No schema migration is added by this setup feature; the existing Identity/audit schema is used.
 - This is an operator-controlled setup/recovery mechanism, not a public Staff registration page. Disable it and remove its password setting after setup to avoid reapplying recovery settings on future restarts.
+
+### Assignment A testing
+
+See [Testing/Assignment-A.md](Testing/Assignment-A.md) for Visual Studio unit tests, real SQL/Functions integration tests, five-user load and twenty-user stress tests, Selenium scenarios, and screenshot evidence instructions.

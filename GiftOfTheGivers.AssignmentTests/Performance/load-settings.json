@@ -1,0 +1,12 @@
+{
+  "warmupRequests": 5,
+  "thinkTimeMilliseconds": 100,
+  "requestTimeoutSeconds": 15,
+  "minimumSuccessRate": 0.95,
+  "loadP95LimitMilliseconds": 3000,
+  "paths": [ "/", "/Projects", "/Donations/Create" ],
+  "phases": [
+    { "name": "load", "virtualUsers": 5, "durationSeconds": 10 },
+    { "name": "stress", "virtualUsers": 20, "durationSeconds": 10 }
+  ]
+}

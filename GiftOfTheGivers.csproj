@@ -29,6 +29,9 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Compile Remove="GiftOfTheGivers.AssignmentTests\**" />
+    <Content Remove="GiftOfTheGivers.AssignmentTests\**" />
+    <Content Remove="TestResults\**" />
     <Compile Remove="GiftOfTheGivers.Tests\**" />
     <Content Remove="GiftOfTheGivers.Tests\**" />
     <Content Remove="GiftOfTheGivers.Functions\**" />
