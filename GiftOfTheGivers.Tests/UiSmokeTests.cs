@@ -95,6 +95,8 @@ public class UiSmokeTests
         var confirmationHtml = await confirmation.Content.ReadAsStringAsync();
         Assert.DoesNotContain("Azure Function Response", confirmationHtml);
         Assert.DoesNotContain("Student prototype · No payment processed. Not a valid tax certificate. Not affiliated with the real foundation.", confirmationHtml);
+        var receiptOutput = Environment.GetEnvironmentVariable("UI_SNAPSHOT_DIRECTORY");
+        if (receiptOutput != null) await File.WriteAllTextAsync(Path.Combine(receiptOutput, "receipt.html"), confirmationHtml);
         var id = location.Split('/').Last();
         var pdf = await client.GetAsync("/Donations/Download/" + id); Assert.Equal("application/pdf", pdf.Content.Headers.ContentType!.MediaType);
         Assert.StartsWith("%PDF-", System.Text.Encoding.ASCII.GetString(await pdf.Content.ReadAsByteArrayAsync()));

@@ -16,8 +16,8 @@ public class DonorDashboardTests
         await using var db = Database();
         db.ReliefProjects.AddRange(new ReliefProject { Id = 1, Name = "Owner project" }, new ReliefProject { Id = 2, Name = "Other project" });
         db.Donations.AddRange(
-            new Donation { DonorId = "owner", DonorName = "Owner name", Currency = "ZAR", Amount = 100, ReliefProjectId = 1 },
-            new Donation { DonorId = "owner", DonorName = "Owner name", Currency = "USD", Amount = 20 },
+            new Donation { DonorId = "owner", DonorName = "Owner name", DonationDate = DateTime.UtcNow.AddMinutes(-1), Currency = "ZAR", Amount = 100, ReliefProjectId = 1 },
+            new Donation { DonorId = "owner", DonorName = "Owner name", DonationDate = DateTime.UtcNow.AddMinutes(-1), Currency = "USD", Amount = 20 },
             new Donation { DonorId = "other", Currency = "ZAR", Amount = 9000, ReliefProjectId = 2 });
         db.Notifications.AddRange(
             new Notification { UserId = "owner", Email = "owner@example.com", Subject = "Owner notice", Body = "Private" },
