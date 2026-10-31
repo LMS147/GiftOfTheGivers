@@ -1,11 +1,16 @@
 @model GiftOfTheGivers.Helpers.Models.ViewModels.DonationInput
-@{ViewData["Title"]="Record a demo donation";ViewData["ActivePage"]="Donate";}
+@{
+    ViewData["Title"] = "New contribution";
+    ViewData["ActivePage"] = "Donate";
+    ViewData["NavActive"] = "donate";
+    if (User.IsInRole("Donor") && !User.IsInRole("Staff") && !User.IsInRole("Volunteer")) { Layout = "_DashboardLayout"; }
+}
 <div class="container py-5"><div class="text-center mb-4"><span class="eyebrow">Your support, your choice</span><h1 class="mt-2">Make a difference</h1><p class="text-muted">Choose a project and review your details before submitting.</p></div>
 <ol class="donation-steps" aria-label="Donation steps"><li aria-current="step"><span>1</span> Details</li><li><span>2</span> Review</li><li><span>3</span> Confirmation</li></ol>
 <partial name="_Flash" />
 <div class="row g-4 justify-content-center"><div class="col-lg-7"><form asp-action="Review" method="post" class="card feature-card p-4 p-md-5 needs-validation" novalidate>
 <div asp-validation-summary="All" class="text-danger mb-3" role="alert"></div><input asp-for="SubmissionKey" type="hidden" />
-<h2 class="h4">Your contribution</h2><p class="demo-note">Student prototype · No real payment is collected.</p>
+<h2 class="h4">Your contribution</h2>
 <div class="mb-3"><label asp-for="ReliefProjectId" class="form-label"></label><select asp-for="ReliefProjectId" class="form-select" asp-items="@(new SelectList(ViewBag.Projects,"Id","Name"))"><option value="">General relief fund</option></select><span asp-validation-for="ReliefProjectId" class="text-danger small"></span></div>
 <div class="row g-3 mb-3"><div class="col-md-7"><label asp-for="Amount" class="form-label"></label><input asp-for="Amount" class="form-control form-control-lg" type="number" min="1" max="1000000" step="0.01" placeholder="250.00" /><span asp-validation-for="Amount" class="text-danger small"></span></div><div class="col-md-5"><label asp-for="Currency" class="form-label"></label><select asp-for="Currency" class="form-select form-select-lg"><option>ZAR</option><option>USD</option><option>EUR</option></select><span asp-validation-for="Currency" class="text-danger small"></span></div></div>
 <div class="amount-choices mb-4" aria-label="Suggested amounts">@foreach(var amount in new[]{50,100,250,500}){<button type="button" class="amount-chip" data-set-amount="@amount">@amount</button>}</div>

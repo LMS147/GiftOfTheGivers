@@ -82,7 +82,8 @@ namespace GiftOfTheGivers.Areas.Identity.Pages.Account
                             return RedirectToAction("Dashboard", "VolunteerDashboard", new { area = "Volunteer" });
                     }
 
-                    // Donors (and everyone else) go where they were heading.
+                    if (user is not null && await _userManager.IsInRoleAsync(user, "Donor") && returnUrl == Url.Content("~/"))
+                        return RedirectToAction("Index", "Donor", new { area = "" });
                     return LocalRedirect(returnUrl);
                 }
                 if (result.RequiresTwoFactor)

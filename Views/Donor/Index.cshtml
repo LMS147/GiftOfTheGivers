@@ -1,0 +1,112 @@
+@model GiftOfTheGivers.Models.DonorOverviewViewModel
+@using System.Globalization
+@{
+    Layout = "_DashboardLayout";
+    ViewData["Title"] = "Donor dashboard";
+    ViewData["NavActive"] = "donor-overview";
+    var latest = Model.LatestContribution;
+}
+<div class="donor-welcome">
+    <div>
+        <span class="eyebrow">Your donor workspace</span>
+        <h2>Welcome back, @Model.DisplayName</h2>
+        <p>Your contributions, projects, and receipts — together in one place.</p>
+    </div>
+    <a class="btn btn-accent" asp-controller="Donations" asp-action="Create"><i class="bi bi-plus-lg me-2" aria-hidden="true"></i>New contribution</a>
+</div>
+
+<div class="donor-section-heading">
+    <div><h2 class="h5 mb-1">Your giving at a glance</h2><p class="small text-muted mb-0">All-time records. Amounts stay in their original currency.</p></div>
+    <form asp-action="Index" method="get" class="donor-currency-form">
+        <label for="dashboard-currency" class="small fw-semibold">Display currency</label>
+        <select id="dashboard-currency" name="currency" class="form-select">
+            @foreach (var currency in new[] { "ZAR", "USD", "EUR" })
+            { <option selected="@(Model.Currency == currency)">@currency</option> }
+        </select>
+        <button type="submit" class="btn btn-soft">Apply</button>
+    </form>
+</div>
+<div class="row g-3 mb-4">
+    <div class="col-6 col-xl-3"><section class="donor-stat"><span class="donor-stat-icon"><i class="bi bi-heart" aria-hidden="true"></i></span><p>Total recorded · @Model.Currency</p><strong>@Model.SelectedTotal.Total.ToString("N2")</strong><span>@Model.SelectedTotal.Count contribution records</span></section></div>
+    <div class="col-6 col-xl-3"><section class="donor-stat"><span class="donor-stat-icon"><i class="bi bi-receipt" aria-hidden="true"></i></span><p>Contributions</p><strong>@Model.ContributionCount</strong><span>Receipts available to download</span></section></div>
+    <div class="col-6 col-xl-3"><section class="donor-stat"><span class="donor-stat-icon"><i class="bi bi-box-seam" aria-hidden="true"></i></span><p>Projects supported</p><strong>@Model.SupportedProjectCount</strong><span>Designated relief projects</span></section></div>
+    <div class="col-6 col-xl-3"><section class="donor-stat"><span class="donor-stat-icon"><i class="bi bi-bell" aria-hidden="true"></i></span><p>Unread notifications</p><strong>@Model.UnreadNotificationCount</strong><a asp-controller="Notifications" asp-action="Index">View your updates <i class="bi bi-arrow-right" aria-hidden="true"></i></a></section></div>
+</div>
+
+<div class="row g-4 mb-4">
+    <div class="col-xl-8">
+        <section class="card donor-panel h-100">
+            <div class="donor-section-heading"><div><h2 class="h5 mb-1">Contribution activity</h2><p class="small text-muted mb-0">Last six months · @Model.Currency</p></div><span class="badge badge-soft">Recorded amounts</span></div>
+            <div class="donor-chart" role="img" aria-label="Recorded monthly contributions in @Model.Currency. @string.Join("; ", Model.Activity.Select(m => m.Month.ToString("MMM yyyy", CultureInfo.InvariantCulture) + ": " + m.Amount.ToString("N2", CultureInfo.InvariantCulture)))">
+                @foreach (var month in Model.Activity)
+                {
+                    var percent = (month.Amount / Model.LargestMonth * 100).ToString("0.##", CultureInfo.InvariantCulture);
+                    <div class="donor-chart-column" aria-hidden="true" title="@month.Month.ToString("MMMM yyyy"): @Model.Currency @month.Amount.ToString("N2")">
+                        <div class="donor-chart-track"><div class="donor-chart-bar @(month.Amount == 0 ? "is-empty" : "")" style="height:@(percent)%"></div></div>
+                        <span>@month.Month.ToString("MMM", CultureInfo.InvariantCulture)</span>
+                    </div>
+                }
+            </div>
+            @if (Model.Activity.All(m => m.Amount == 0)) { <p class="small text-muted mb-0">No @Model.Currency contributions recorded in the last six months.</p> }
+        </section>
+    </div>
+    <div class="col-xl-4">
+        <section class="card donor-panel donor-receipt-panel h-100">
+            <div class="donor-section-heading"><h2 class="h5 mb-0">Latest receipt</h2><i class="bi bi-file-earmark-text" aria-hidden="true"></i></div>
+            @if (latest == null)
+            {
+                <div class="donor-mini-empty"><i class="bi bi-receipt" aria-hidden="true"></i><p>Your first receipt will appear here after you record a contribution.</p><a class="btn btn-soft" asp-controller="Donations" asp-action="Create">Get started</a></div>
+            }
+            else
+            {
+                <span class="small text-muted">@latest.DonationDate.ToString("dd MMM yyyy")</span>
+                <strong class="donor-receipt-amount">@latest.Currency @latest.Amount.ToString("N2")</strong>
+                <p class="mb-1 fw-semibold">@(latest.ReliefProject?.Name ?? "General relief fund")</p>
+                <p class="small text-muted donor-reference">@latest.ReferenceNumber</p>
+                <a asp-controller="Donations" asp-action="Download" asp-route-id="@latest.Id" class="btn btn-gotg mt-auto"><i class="bi bi-download me-2" aria-hidden="true"></i>Download PDF</a>
+                <a asp-controller="Donations" asp-action="Certificate" asp-route-id="@latest.Id" class="donor-secondary-link">View receipt details</a>
+            }
+        </section>
+    </div>
+</div>
+
+<section class="card donor-panel mb-4">
+    <div class="donor-section-heading"><div><h2 class="h5 mb-1">Recent contributions</h2><p class="small text-muted mb-0">Your latest records across all currencies.</p></div><a asp-controller="Donations" asp-action="MyDonations" class="donor-secondary-link m-0">View all <i class="bi bi-arrow-right ms-1" aria-hidden="true"></i></a></div>
+    @if (Model.RecentContributions.Count == 0)
+    { <div class="donor-mini-empty"><h3 class="h6">Start your contribution history</h3><p>Choose a project to keep your contributions and receipts organised here.</p><a class="btn btn-gotg" asp-controller="Projects" asp-action="Index">Explore projects</a></div> }
+    else
+    {
+        <div class="table-responsive d-none d-md-block"><table class="table align-middle mb-0 donor-table"><caption class="visually-hidden">Your five most recent contributions</caption><thead><tr><th scope="col">Project / Reference</th><th scope="col">Date</th><th scope="col">Amount</th><th scope="col">Status</th><th scope="col">Receipt</th></tr></thead><tbody>
+        @foreach (var item in Model.RecentContributions)
+        {
+            <tr><td><strong>@(item.ReliefProject?.Name ?? "General relief fund")</strong><div class="small text-muted donor-reference">@item.ReferenceNumber</div></td><td class="text-nowrap">@item.DonationDate.ToString("dd MMM yyyy")</td><td class="text-nowrap fw-semibold">@item.Currency @item.Amount.ToString("N2")</td><td><span class="badge badge-soft" title="A contribution record does not confirm payment.">Recorded</span></td><td><a class="btn btn-soft btn-sm" asp-controller="Donations" asp-action="Download" asp-route-id="@item.Id" aria-label="Download receipt @item.ReferenceNumber">PDF <i class="bi bi-download ms-1" aria-hidden="true"></i></a></td></tr>
+        }
+        </tbody></table></div>
+        <div class="donor-mobile-records d-md-none">
+        @foreach (var item in Model.RecentContributions)
+        {
+            <article class="donor-mobile-record">
+                <div><strong>@(item.ReliefProject?.Name ?? "General relief fund")</strong><p class="small text-muted mb-1">@item.DonationDate.ToString("dd MMM yyyy") · @item.ReferenceNumber</p></div>
+                <div class="donor-mobile-record-actions"><strong>@item.Currency @item.Amount.ToString("N2")</strong><a class="btn btn-soft btn-sm" asp-controller="Donations" asp-action="Download" asp-route-id="@item.Id" aria-label="Download receipt @item.ReferenceNumber">Receipt <i class="bi bi-download ms-1" aria-hidden="true"></i></a></div>
+            </article>
+        }
+        </div>
+    }
+</section>
+
+<div class="row g-4">
+    <div class="col-lg-6"><section class="card donor-panel h-100"><div class="donor-section-heading"><h2 class="h5 mb-0">Your projects</h2><a asp-controller="Projects" asp-action="Index" class="donor-secondary-link m-0">Explore more</a></div>
+    @if (Model.SupportedProjects.Count == 0) { <p class="text-muted mb-0">When you choose a specific project, it will appear here for easy access to its updates.</p> }
+    @foreach (var project in Model.SupportedProjects)
+    {
+        <a class="donor-project-link" asp-controller="Projects" asp-action="Details" asp-route-id="@project.Id"><span class="donor-stat-icon"><i class="bi bi-box-seam" aria-hidden="true"></i></span><span><strong>@project.Name</strong><small>@project.Location · @(project.IsActive ? "Active" : "Closed")</small></span><i class="bi bi-arrow-right ms-auto" aria-hidden="true"></i></a>
+    }
+    </section></div>
+    <div class="col-lg-6"><section class="card donor-panel h-100"><div class="donor-section-heading"><h2 class="h5 mb-0">Latest updates</h2><a asp-controller="Notifications" asp-action="Index" class="donor-secondary-link m-0">All notifications</a></div>
+    @if (Model.Notifications.Count == 0) { <p class="text-muted mb-0">Contribution confirmations and account updates will appear here.</p> }
+    @foreach (var notification in Model.Notifications)
+    {
+        <a class="donor-update-link" asp-controller="Notifications" asp-action="Index"><span class="donor-update-dot @(notification.ReadAtUtc == null ? "unread" : "")" aria-hidden="true"></span><span><strong>@notification.Subject</strong><small>@notification.CreatedAtUtc.ToString("dd MMM yyyy, HH:mm") UTC</small></span><i class="bi bi-chevron-right ms-auto" aria-hidden="true"></i></a>
+    }
+    </section></div>
+</div>

@@ -35,8 +35,8 @@
                         <span class="small fw-semibold text-muted">@User.Identity?.Name</span>
                     </span>
                     <span class="badge @(User.IsInRole("Staff") ? "badge-amber" : "badge-soft")">
-                        <i class="bi @(User.IsInRole("Staff") ? "bi-shield-lock" : "bi-person-check") me-1"></i>
-                        @(User.IsInRole("Staff") ? "Staff" : "Volunteer")
+                        <i class="bi @(User.IsInRole("Staff") ? "bi-shield-lock" : User.IsInRole("Volunteer") ? "bi-person-check" : "bi-heart") me-1"></i>
+                        @(User.IsInRole("Staff") ? "Staff" : User.IsInRole("Volunteer") ? "Volunteer" : "Donor")
                     </span>
                 </div>
             </header>

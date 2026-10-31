@@ -46,6 +46,7 @@ builder.Services.AddDataProtection();
 builder.Services.AddSingleton<SubmissionAccessService>();
 builder.Services.AddSingleton<DonationReviewService>();
 builder.Services.AddScoped<ExperienceService>();
+builder.Services.AddScoped<DonorDashboardService>();
 builder.Services.Configure<EmailOptions>(builder.Configuration.GetSection("Email"));
 builder.Services.AddTransient<INotificationEmailSender, SmtpNotificationEmailSender>();
 builder.Services.AddHostedService<EmailNotificationWorker>();

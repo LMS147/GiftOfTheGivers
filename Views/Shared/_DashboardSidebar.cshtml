@@ -1,8 +1,9 @@
 @{
     var active = ViewData["NavActive"]?.ToString() ?? "";
     var isStaff = User.IsInRole("Staff");
-    var roleName = isStaff ? "Staff" : "Volunteer";
-    var roleIcon = isStaff ? "bi-shield-lock" : "bi-person-check";
+    var isVolunteer = User.IsInRole("Volunteer");
+    var roleName = isStaff ? "Staff" : isVolunteer ? "Volunteer" : "Donor";
+    var roleIcon = isStaff ? "bi-shield-lock" : isVolunteer ? "bi-person-check" : "bi-heart";
 }
 
 <div class="dash-sidebar-inner">
@@ -33,7 +34,7 @@
             <a class="@(active=="audit"?"active":"")" asp-area="Staff" asp-controller="Staff" asp-action="Audit"><i class="bi bi-clock-history"></i> Audit history</a>
             <a class="@(active=="diagnostics"?"active":"")" asp-area="Staff" asp-controller="Staff" asp-action="Diagnostics"><i class="bi bi-activity"></i> Service diagnostics</a>
         }
-        else
+        else if (isVolunteer)
         {
             <div class="dash-nav-section">My area</div>
             <a class="@(active == "overview" ? "active" : "")" asp-area="Volunteer" asp-controller="VolunteerDashboard" asp-action="Dashboard">
@@ -45,6 +46,15 @@
             <a class="@(active == "updates" ? "active" : "")" asp-area="Volunteer" asp-controller="VolunteerDashboard" asp-action="Updates">
                 <i class="bi bi-newspaper"></i> Relief updates
             </a>
+        }
+        else
+        {
+            <div class="dash-nav-section">Your giving</div>
+            <a class="@(active=="donor-overview"?"active":"")" asp-area="" asp-controller="Donor" asp-action="Index"><i class="bi bi-grid"></i> Overview</a>
+            <a class="@(active=="contributions"?"active":"")" asp-area="" asp-controller="Donations" asp-action="MyDonations"><i class="bi bi-clock-history"></i> Contribution history</a>
+            <a class="@(active=="donate"?"active":"")" asp-area="" asp-controller="Donations" asp-action="Create"><i class="bi bi-plus-circle"></i> Make a contribution</a>
+            <a asp-area="" asp-controller="Projects" asp-action="Index"><i class="bi bi-box-seam"></i> Explore projects</a>
+            <a class="@(active=="notifications"?"active":"")" asp-area="" asp-controller="Notifications" asp-action="Index"><i class="bi bi-bell"></i> Notifications</a>
         }
     </nav>
 

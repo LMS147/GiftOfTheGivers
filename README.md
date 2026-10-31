@@ -121,3 +121,10 @@ The worker claims up to 20 queued messages every 30 seconds, uses an atomic data
 The PDF receipt uses a standard built-in font; characters outside printable ASCII are replaced with `?`. The HTML receipt retains full names and remains printable through the browser.
 
 All targets and contribution totals are demonstration figures. Do not enable live payment collection for this student prototype; no payment gateway is configured.
+
+
+### Donor workspace
+
+Donor accounts land at `/Donor` after a default login or registration. An explicit return URL is preserved. The overview includes currency-specific recorded totals, six-month activity, recent contributions, supported projects, notifications and the latest PDF receipt. `/Donations/MyDonations` is the separate contribution-history screen, with currency, reference/project and date filters.
+
+The shared dashboard layout now distinguishes Staff, Volunteer and Donor navigation. The two selected yellow notices were removed from the contribution form and HTML receipt; review-step payment information and the underlying demo payment behavior are unchanged. This update does not require a schema migration.
