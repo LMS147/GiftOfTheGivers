@@ -128,3 +128,30 @@ All targets and contribution totals are demonstration figures. Do not enable liv
 Donor accounts land at `/Donor` after a default login or registration. An explicit return URL is preserved. The overview includes currency-specific recorded totals, six-month activity, recent contributions, supported projects, notifications and the latest PDF receipt. `/Donations/MyDonations` is the separate contribution-history screen, with currency, reference/project and date filters.
 
 The shared dashboard layout now distinguishes Staff, Volunteer and Donor navigation. The two selected yellow notices were removed from the contribution form and HTML receipt; review-step payment information and the underlying demo payment behavior are unchanged. This update does not require a schema migration.
+
+
+## Create or recover your production Staff account
+
+Production deployments do not seed the published demo accounts. Use deployment settings to create a Staff account through ASP.NET Core Identity; do not insert passwords or hashes manually into SQL.
+
+After deploying this version, open **Azure App Service → Settings → Environment variables → App settings** and add:
+
+| Setting | Value |
+|---|---|
+| `StaffBootstrap__Enabled` | `true` |
+| `StaffBootstrap__Email` | The email you want to use for Staff login |
+| `StaffBootstrap__Password` | A new private password with at least 12 characters, uppercase, lowercase, a digit and a symbol |
+| `StaffBootstrap__ResetPassword` | `false` for a new account; `true` only when intentionally recovering an existing Staff account |
+
+Apply the settings and restart the application. The startup log should contain **Staff bootstrap completed: Created** (or Promoted/PasswordReset). Sign in at `/Identity/Account/Login` with that email and password. Staff login routes to `/Staff/Dashboard`.
+
+After successfully signing in, set `StaffBootstrap__Enabled=false`, set `StaffBootstrap__ResetPassword=false`, and remove `StaffBootstrap__Password` from the App Service settings. The account and its password hash remain in the database. Keep the app environment as Production; no demo seeding is required.
+
+Behavior and troubleshooting:
+
+- Disabled or missing setup settings leave accounts unchanged. Credentials are never committed or logged.
+- An existing Staff account keeps its password by default. `ExistingStaffPasswordMismatch` means the supplied password does not match: use the correct password or explicitly set ResetPassword=true to recover that Staff account. Explicit recovery also clears lockout.
+- An existing Donor/Volunteer account is promoted only if the supplied password matches its current password. `ExistingAccountPasswordMismatch` refuses promotion and does not reset that account; use the correct current password or a new, unused email address.
+- `WeakPassword` or `InvalidEmail` means the settings need correction. The publicly documented demo password `Password123!` is rejected for this setup. Identity validation failures report error codes without credentials. Setup failures are logged without taking the website offline.
+- Creation, role assignment and audit changes use one transaction on SQL Server. No schema migration is added by this setup feature; the existing Identity/audit schema is used.
+- This is an operator-controlled setup/recovery mechanism, not a public Staff registration page. Disable it and remove its password setting after setup to avoid reapplying recovery settings on future restarts.
