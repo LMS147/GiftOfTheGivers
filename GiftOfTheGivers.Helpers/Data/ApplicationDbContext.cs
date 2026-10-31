@@ -6,7 +6,7 @@ namespace GiftOfTheGivers.Helpers.Data;
 
 /// <summary>
 /// EF Core database context. It inherits Identity's context so the ASP.NET
-/// Identity tables (Users, Roles, UserRoles, ...) live in the same SQLite
+/// Identity tables (Users, Roles, UserRoles, ...) live in the same SQL Server
 /// database as the application's own tables.
 /// </summary>
 public class ApplicationDbContext : IdentityDbContext

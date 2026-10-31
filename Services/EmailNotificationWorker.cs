@@ -66,7 +66,9 @@ public sealed class EmailNotificationWorker(IServiceScopeFactory scopes, IOption
             if (claimed == 0) continue;
             try
             {
-                await sender.SendAsync(item, ct);
+                using var timeout = CancellationTokenSource.CreateLinkedTokenSource(ct);
+                timeout.CancelAfter(TimeSpan.FromSeconds(45));
+                await sender.SendAsync(item, timeout.Token);
                 await db.Notifications.Where(n => n.Id == item.Id).ExecuteUpdateAsync(s => s.SetProperty(n => n.SentAtUtc, DateTime.UtcNow).SetProperty(n => n.LastDeliveryError, (string?)null), ct);
             }
             catch (OperationCanceledException) when (ct.IsCancellationRequested) { throw; }

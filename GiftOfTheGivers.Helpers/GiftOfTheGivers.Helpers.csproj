@@ -9,7 +9,7 @@
     <!-- SECTION D: NuGet Packaging Properties for Azure Artifacts Feed      -->
     <!-- =================================================================== -->
     <PackageId>GiftOfTheGivers.Helpers</PackageId>
-    <Version>1.0.1</Version>
+    <Version>1.1.0</Version>
     <Authors>Gift of the Givers Foundation</Authors>
     <Company>Gift of the Givers</Company>
     <Product>Gift of the Givers Shared Utility Library</Product>

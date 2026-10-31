@@ -43,7 +43,6 @@ public class StaffController : Controller
             DonationCount = await _db.Donations.CountAsync(),
             UpdateCount = await _db.ProjectUpdates.CountAsync(),
             ProjectCount = await _db.ReliefProjects.CountAsync(),
-            // SQLite can't SUM() decimals server-side, so sum in memory
             TotalRaisedZar = (await _db.Donations
                 .Where(d => d.Currency == "ZAR")
                 .Select(d => d.Amount)

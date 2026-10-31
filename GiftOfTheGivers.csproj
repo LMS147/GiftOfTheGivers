@@ -3,7 +3,7 @@
   <PropertyGroup>
     <TargetFramework>net9.0</TargetFramework>
     <Nullable>enable</Nullable>
-    <HelperPackageVersion Condition="'$(HelperPackageVersion)' == ''">1.0.1</HelperPackageVersion>
+    <HelperPackageVersion Condition="'$(HelperPackageVersion)' == ''">1.1.0</HelperPackageVersion>
     <ImplicitUsings>enable</ImplicitUsings>
     <UserSecretsId>aspnet-GiftOfTheGivers-e01789bb-c31b-497f-bd5e-11897265a2c3</UserSecretsId>
   </PropertyGroup>

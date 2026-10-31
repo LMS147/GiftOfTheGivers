@@ -5,7 +5,7 @@ ASP.NET Core MVC (.NET 9), Razor/Bootstrap, ASP.NET Core Identity, EF Core and S
 ## Projects
 
 - `GiftOfTheGivers.csproj`: public site, donation and volunteer forms, donor history, staff and volunteer areas.
-- `GiftOfTheGivers.Helpers`: models, database context, SQL migrations, seed roles/data, shared calculations. Packs as NuGet version 1.0.1.
+- `GiftOfTheGivers.Helpers`: models, database context, SQL migrations, seed roles/data, shared calculations. Packs as NuGet version 1.1.0.
 - `GiftOfTheGivers.Functions`: isolated Azure Functions for trusted CRUD, database-backed receipt generation and durable project-update audit blobs.
 - `GiftOfTheGivers.Tests`: access-control, Function authorization, audit-failure and migration-snapshot regression tests.
 
@@ -76,11 +76,11 @@ Use a trusted server tool with an `x-functions-key` header:
 
 ## Shared helper package / Azure Artifacts
 
-The default build uses a project reference, so a private feed is not needed. To demonstrate consuming the package, publish version 1.0.1 to your own Azure Artifacts feed, authenticate using the Azure Artifacts Credential Provider, and restore/build with `UseHelperPackage=true`. Configure the feed locally without committing a PAT.
+The default build uses a project reference, so a private feed is not needed. To demonstrate consuming the package, publish version 1.1.0 to your own Azure Artifacts feed, authenticate using the Azure Artifacts Credential Provider, and restore/build with `UseHelperPackage=true`. Configure the feed locally without committing a PAT.
 
 ```bash
 dotnet pack GiftOfTheGivers.Helpers/GiftOfTheGivers.Helpers.csproj -c Release
-dotnet nuget push GiftOfTheGivers.Helpers/nupkg/GiftOfTheGivers.Helpers.1.0.1.nupkg --source YOUR_FEED_URL --api-key az
+dotnet nuget push GiftOfTheGivers.Helpers/nupkg/GiftOfTheGivers.Helpers.1.1.0.nupkg --source YOUR_FEED_URL --api-key az
 dotnet restore GiftOfTheGivers.csproj -p:UseHelperPackage=true --source https://api.nuget.org/v3/index.json --source YOUR_FEED_URL
 dotnet build GiftOfTheGivers.csproj -c Release -p:UseHelperPackage=true --no-restore
 ```

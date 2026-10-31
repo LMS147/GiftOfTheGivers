@@ -56,6 +56,7 @@ public class VolunteersController : Controller
         if (selectedSkills is { Length: > 0 })
             volunteer.Skills = string.Join(", ", selectedSkills);
 
+        if (volunteer.Email.Length > 254) ModelState.AddModelError(nameof(volunteer.Email), "Email address must be at most 254 characters.");
         if (!ModelState.IsValid)
         {
             ViewData["Skills"] = Skills;

@@ -17,6 +17,11 @@ jobs:
       - run: dotnet test GiftOfTheGivers.Tests/GiftOfTheGivers.Tests.csproj --configuration Release --no-build --no-restore
         env:
           UI_SNAPSHOT_DIRECTORY: ${{ github.workspace }}/ui-snapshots
+      - name: Check desktop and mobile layouts
+        run: |
+          npm install --prefix /tmp/gotg-ui-tools --no-package-lock playwright@1.56.1
+          /tmp/gotg-ui-tools/node_modules/.bin/playwright install --with-deps chromium
+          PLAYWRIGHT_MODULE=/tmp/gotg-ui-tools/node_modules/playwright node scripts/check-ui.cjs
       - uses: actions/upload-artifact@v4
         if: always()
         with:

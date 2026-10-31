@@ -30,7 +30,7 @@ public class UiSmokeTests
             services.AddLogging(); services.AddDataProtection(); services.AddHttpClient();
             services.AddDbContext<ApplicationDbContext>(o => o.UseInMemoryDatabase(dbName));
             services.AddIdentity<IdentityUser, IdentityRole>().AddEntityFrameworkStores<ApplicationDbContext>().AddDefaultUI();
-            services.AddAuthentication("test").AddScheme<AuthenticationSchemeOptions, UiAuthentication>("test", _ => { });
+            services.AddAuthentication(o => { o.DefaultScheme = "test"; o.DefaultAuthenticateScheme = "test"; o.DefaultChallengeScheme = "test"; o.DefaultForbidScheme = "test"; }).AddScheme<AuthenticationSchemeOptions, UiAuthentication>("test", _ => { });
             services.AddAuthorization(); services.AddScoped<ExperienceService>(); services.AddSingleton<SubmissionAccessService>(); services.AddSingleton<DonationReviewService>();
             services.AddHttpClient<ITaxCertificateService, TaxCertificateService>();
             services.AddControllersWithViews().AddApplicationPart(typeof(DonationsController).Assembly);
@@ -66,7 +66,7 @@ public class UiSmokeTests
             client.DefaultRequestHeaders.Remove("X-Test-Role");
             if (screen.Item3 != "") client.DefaultRequestHeaders.Add("X-Test-Role", screen.Item3);
             var response = await client.GetAsync(screen.Item1);
-            Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+            Assert.True(response.StatusCode == HttpStatusCode.OK, $"{screen.Item1}: {response.StatusCode} -> {response.Headers.Location}");
             var html = await response.Content.ReadAsStringAsync(); Assert.Contains("main-content", html);
             var output = Environment.GetEnvironmentVariable("UI_SNAPSHOT_DIRECTORY");
             if (output != null) { Directory.CreateDirectory(output); await File.WriteAllTextAsync(Path.Combine(output, screen.Item2 + ".html"), html); }

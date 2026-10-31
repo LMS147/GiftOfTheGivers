@@ -19,8 +19,9 @@ public sealed class ExperienceService(ApplicationDbContext db)
     public async Task<List<ProjectCard>> ProjectCardsAsync(bool activeOnly = true)
     {
         var projects = await db.ReliefProjects.AsNoTracking().Where(p => !activeOnly || p.IsActive).OrderBy(p => p.Name).ToListAsync();
-        var amounts = await db.Donations.AsNoTracking().Where(d => d.ReliefProjectId != null && d.Currency == "ZAR")
-            .Select(d => new { d.ReliefProjectId, d.Amount }).ToListAsync();
+        var projectIds = projects.Select(p => p.Id).ToList();
+        var amounts = await db.Donations.AsNoTracking().Where(d => d.ReliefProjectId != null && projectIds.Contains(d.ReliefProjectId.Value) && d.Currency == "ZAR")
+            .GroupBy(d => d.ReliefProjectId).Select(g => new { ReliefProjectId = g.Key, Amount = g.Sum(d => d.Amount) }).ToListAsync();
         return projects.Select(p => new ProjectCard
         {
             Project = p, RecordedZar = amounts.Where(d => d.ReliefProjectId == p.Id).Sum(d => d.Amount)
