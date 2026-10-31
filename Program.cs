@@ -47,6 +47,7 @@ builder.Services.AddSingleton<SubmissionAccessService>();
 builder.Services.AddSingleton<DonationReviewService>();
 builder.Services.AddScoped<ExperienceService>();
 builder.Services.AddScoped<DonorDashboardService>();
+builder.Services.AddScoped<StaffBootstrapper>();
 builder.Services.Configure<EmailOptions>(builder.Configuration.GetSection("Email"));
 builder.Services.AddTransient<INotificationEmailSender, SmtpNotificationEmailSender>();
 builder.Services.AddHostedService<EmailNotificationWorker>();
@@ -125,6 +126,10 @@ using (var scope = app.Services.CreateScope())
     await context.Database.MigrateAsync();
 
     await DbSeeder.SeedAsync(services, app.Environment.IsDevelopment() && builder.Configuration.GetValue<bool>("SeedDemoData"));
+
+    // Production staff setup is explicitly configured through deployment settings.
+    await services.GetRequiredService<StaffBootstrapper>().InitializeAsync(
+        builder.Configuration.GetSection("StaffBootstrap").Get<StaffBootstrapOptions>() ?? new());
 }
 
 app.Run();

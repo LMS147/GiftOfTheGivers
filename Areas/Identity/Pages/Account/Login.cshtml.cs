@@ -63,16 +63,17 @@ namespace GiftOfTheGivers.Areas.Identity.Pages.Account
 
             if (ModelState.IsValid)
             {
-                // lockoutOnFailure: false — demo accounts don't get locked out.
-                var result = await _signInManager.PasswordSignInAsync(
-                    Input.Email, Input.Password, Input.RememberMe, lockoutOnFailure: false);
+                Input.Email = Input.Email.Trim();
+                // Existing account/password checks are handled by ASP.NET Core Identity.
+                var user = await _userManager.FindByEmailAsync(Input.Email);
+                var result = user is null ? Microsoft.AspNetCore.Identity.SignInResult.Failed
+                    : await _signInManager.PasswordSignInAsync(user, Input.Password, Input.RememberMe, lockoutOnFailure: false);
 
                 if (result.Succeeded)
                 {
                     _logger.LogInformation("User logged in.");
 
                     // ---- Role-based routing: send users to their own dashboard ----
-                    var user = await _userManager.FindByEmailAsync(Input.Email);
                     if (user is not null)
                     {
                         if (await _userManager.IsInRoleAsync(user, "Staff"))
