@@ -61,7 +61,11 @@ namespace GiftOfTheGivers.Helpers.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<int?>("ReliefProjectId").HasColumnType("int");
+                    b.Property<Guid?>("SubmissionKey").HasColumnType("uniqueidentifier");
                     b.HasKey("Id");
+                    b.HasIndex("ReliefProjectId");
+                    b.HasIndex("SubmissionKey").IsUnique().HasFilter("[SubmissionKey] IS NOT NULL");
 
                     b.ToTable("Donations");
                 });
@@ -122,6 +126,10 @@ namespace GiftOfTheGivers.Helpers.Migrations
                         .HasMaxLength(120)
                         .HasColumnType("nvarchar(120)");
 
+                    b.Property<string>("Category").IsRequired().HasMaxLength(30).HasColumnType("nvarchar(30)");
+                    b.Property<decimal>("TargetAmount").HasPrecision(18, 2).HasColumnType("decimal(18,2)");
+                    b.Property<bool>("IsActive").HasColumnType("bit");
+                    b.Property<string>("ImageUrl").HasMaxLength(500).HasColumnType("nvarchar(500)");
                     b.HasKey("Id");
 
                     b.ToTable("ReliefProjects");
@@ -176,6 +184,36 @@ namespace GiftOfTheGivers.Helpers.Migrations
                     b.ToTable("Volunteers");
                 });
 
+            modelBuilder.Entity("GiftOfTheGivers.Helpers.Models.Notification", b =>
+            {
+                b.Property<int>("Id").ValueGeneratedOnAdd().HasColumnType("int");
+                SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+                b.Property<string>("UserId").HasMaxLength(450).HasColumnType("nvarchar(450)");
+                b.Property<string>("Email").IsRequired().HasMaxLength(254).HasColumnType("nvarchar(254)");
+                b.Property<string>("Subject").IsRequired().HasMaxLength(200).HasColumnType("nvarchar(200)");
+                b.Property<string>("Body").IsRequired().HasMaxLength(2000).HasColumnType("nvarchar(2000)");
+                b.Property<DateTime>("CreatedAtUtc").HasColumnType("datetime2");
+                b.Property<DateTime?>("ReadAtUtc").HasColumnType("datetime2");
+                b.Property<DateTime?>("SentAtUtc").HasColumnType("datetime2");
+                b.Property<int>("DeliveryAttempts").HasColumnType("int");
+                b.Property<DateTime?>("NextAttemptAtUtc").HasColumnType("datetime2");
+                b.Property<string>("LastDeliveryError").HasMaxLength(200).HasColumnType("nvarchar(200)");
+                b.HasKey("Id"); b.HasIndex("UserId", "ReadAtUtc"); b.HasIndex("SentAtUtc", "NextAttemptAtUtc");
+                b.ToTable("Notifications");
+            });
+            modelBuilder.Entity("GiftOfTheGivers.Helpers.Models.StaffAuditEntry", b =>
+            {
+                b.Property<int>("Id").ValueGeneratedOnAdd().HasColumnType("int");
+                SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+                b.Property<string>("ActorUserId").HasMaxLength(450).HasColumnType("nvarchar(450)");
+                b.Property<string>("ActorName").IsRequired().HasMaxLength(256).HasColumnType("nvarchar(256)");
+                b.Property<string>("Action").IsRequired().HasMaxLength(50).HasColumnType("nvarchar(50)");
+                b.Property<string>("EntityType").IsRequired().HasMaxLength(50).HasColumnType("nvarchar(50)");
+                b.Property<int>("EntityId").HasColumnType("int");
+                b.Property<string>("Summary").IsRequired().HasMaxLength(1000).HasColumnType("nvarchar(1000)");
+                b.Property<DateTime>("OccurredAtUtc").HasColumnType("datetime2");
+                b.HasKey("Id"); b.HasIndex("OccurredAtUtc"); b.ToTable("StaffAuditEntries");
+            });
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRole", b =>
                 {
                     b.Property<string>("Id")
@@ -374,6 +412,11 @@ namespace GiftOfTheGivers.Helpers.Migrations
                     b.ToTable("AspNetUserTokens", (string)null);
                 });
 
+            modelBuilder.Entity("GiftOfTheGivers.Helpers.Models.Donation", b =>
+            {
+                b.HasOne("GiftOfTheGivers.Helpers.Models.ReliefProject", "ReliefProject").WithMany().HasForeignKey("ReliefProjectId").OnDelete(DeleteBehavior.SetNull);
+                b.Navigation("ReliefProject");
+            });
             modelBuilder.Entity("GiftOfTheGivers.Helpers.Models.ProjectUpdate", b =>
                 {
                     b.HasOne("GiftOfTheGivers.Helpers.Models.ReliefProject", "ReliefProject")

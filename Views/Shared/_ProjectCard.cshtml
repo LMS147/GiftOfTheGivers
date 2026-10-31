@@ -1,0 +1,18 @@
+@model GiftOfTheGivers.Helpers.Models.ViewModels.ProjectCard
+<article class="project-card h-100">
+    <a asp-area="" asp-controller="Projects" asp-action="Details" asp-route-id="@Model.Project.Id" tabindex="-1" aria-hidden="true">
+        <img src="@Model.Image" alt="" loading="lazy" class="project-image" />
+    </a>
+    <div class="p-4">
+        <div class="d-flex justify-content-between align-items-center gap-2 mb-3"><span class="badge badge-soft">@Model.Project.Category</span><span class="small text-muted">@(Model.Project.IsActive ? "Active" : "Closed")</span></div>
+        <h3 class="h5"><a class="project-title" asp-area="" asp-controller="Projects" asp-action="Details" asp-route-id="@Model.Project.Id">@Model.Project.Name</a></h3>
+        <p class="small text-muted"><i class="bi bi-geo-alt me-1" aria-hidden="true"></i>@Model.Project.Location</p>
+        <p class="project-description">@Model.Project.Description</p>
+        @if (Model.Project.TargetAmount > 0)
+        {
+            <div class="progress project-progress" role="progressbar" aria-label="Demo target progress" aria-valuenow="@Model.Progress" aria-valuemin="0" aria-valuemax="100"><div class="progress-bar" style="width:@(Model.Progress)%"></div></div>
+            <p class="small mt-2 mb-3"><strong>ZAR @Model.RecordedZar.ToString("N2")</strong> / @Model.Project.TargetAmount.ToString("N2") · Demo records</p>
+        }
+        <a class="btn btn-soft w-100" asp-area="" asp-controller="Projects" asp-action="Details" asp-route-id="@Model.Project.Id">View project <i class="bi bi-arrow-right ms-2" aria-hidden="true"></i></a>
+    </div>
+</article>

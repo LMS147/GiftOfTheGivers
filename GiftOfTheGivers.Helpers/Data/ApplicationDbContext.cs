@@ -21,9 +21,18 @@ public class ApplicationDbContext : IdentityDbContext
     public DbSet<ReliefProject> ReliefProjects => Set<ReliefProject>();
     public DbSet<ProjectUpdate> ProjectUpdates => Set<ProjectUpdate>();
 
+    public DbSet<Notification> Notifications => Set<Notification>();
+    public DbSet<StaffAuditEntry> StaffAuditEntries => Set<StaffAuditEntry>();
+
     protected override void OnModelCreating(ModelBuilder builder)
     {
         base.OnModelCreating(builder);
+        builder.Entity<ReliefProject>().Property(p => p.TargetAmount).HasPrecision(18, 2);
+        builder.Entity<Donation>().HasIndex(d => d.SubmissionKey).IsUnique().HasFilter("[SubmissionKey] IS NOT NULL");
+        builder.Entity<Donation>().HasOne(d => d.ReliefProject).WithMany().HasForeignKey(d => d.ReliefProjectId).OnDelete(DeleteBehavior.SetNull);
+        builder.Entity<Notification>().HasIndex(n => new { n.UserId, n.ReadAtUtc });
+        builder.Entity<Notification>().HasIndex(n => new { n.SentAtUtc, n.NextAttemptAtUtc });
+        builder.Entity<StaffAuditEntry>().HasIndex(a => a.OccurredAtUtc);
 
         // SQL Server needs an explicit precision for money columns
         // (the default decimal(18,2) would otherwise warn about truncation).

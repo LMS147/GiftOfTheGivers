@@ -68,8 +68,8 @@ public class AccessTests
         await using var db = Database();
         db.Donations.Add(new Donation { Id = 1, DonorId = "owner" });
         await db.SaveChangesAsync();
-        var controller = new DonationsController(new Clients(), new SubmissionAccessService(_provider), db,
-            new NeverCalledCertificateService(), NullLogger<DonationsController>.Instance)
+        var controller = new DonationsController(db, new SubmissionAccessService(_provider), new DonationReviewService(_provider), new ExperienceService(db),
+            new NeverCalledCertificateService())
         { ControllerContext = new ControllerContext { HttpContext = new DefaultHttpContext { User = User("other") } } };
         Assert.IsType<NotFoundResult>(await controller.Certificate(1));
         Assert.IsType<NotFoundResult>(await controller.CloudCertificate(1));
@@ -81,7 +81,7 @@ public class AccessTests
         await using var db = Database();
         db.Volunteers.Add(new Volunteer { Id = 1, FullName = "Test", Email = "test@example.com", Phone = "123", Availability = "Weekends" });
         await db.SaveChangesAsync();
-        var controller = new VolunteersController(new SubmissionAccessService(_provider), db)
+        var controller = new VolunteersController(new SubmissionAccessService(_provider), db, new ExperienceService(db))
         { ControllerContext = new ControllerContext { HttpContext = new DefaultHttpContext() } };
         Assert.IsType<NotFoundResult>(await controller.ThankYou(1));
     }

@@ -65,7 +65,8 @@ else
         <div class="col-lg-5">
             <div class="card feature-card">
                 <div class="card-body p-4">
-                    <h2 class="h6 mb-3"><i class="bi bi-clipboard-check me-2" style="color: var(--brand-600);"></i>Status</h2>
+                    <h2 class="h6 mb-3">Application status</h2>
+                    <div class="next-step-note mb-3"><strong>What happens next</strong><p class="mb-0 mt-1">@(app.Status=="Approved"?"Your application is approved. The team will contact you about suitable opportunities.":app.Status=="Declined"?"Your application was declined. Contact the support team if you would like to discuss future opportunities.":"Your application is awaiting staff review. You do not need to apply again. Check your notifications for a decision.")</p></div>
                     <div class="mb-3">
                         <span class="badge fs-6 @(app.Status == "Approved" ? "badge-soft" : app.Status == "Declined" ? "text-bg-danger" : "badge-amber")">
                             @app.Status

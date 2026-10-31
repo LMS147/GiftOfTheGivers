@@ -12,6 +12,7 @@
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
 </head>
 <body class="dash-body">
+<a class="skip-link" href="#main-content">Skip to content</a>
 
     <div class="dash-shell">
         <!-- Desktop sidebar -->
@@ -28,6 +29,7 @@
                 </button>
                 <h1 class="dash-title">@ViewData["Title"]</h1>
                 <div class="ms-auto d-flex align-items-center gap-2">
+                    @await Component.InvokeAsync("NotificationBell")
                     <span class="d-none d-sm-inline-flex align-items-center gap-2 me-2">
                         <span class="avatar">@(User.Identity?.Name?.TrimStart().FirstOrDefault().ToString().ToUpperInvariant() ?? "?")</span>
                         <span class="small fw-semibold text-muted">@User.Identity?.Name</span>
@@ -39,7 +41,7 @@
                 </div>
             </header>
 
-            <main class="dash-content">
+            <main class="dash-content" id="main-content" tabindex="-1">
                 <div class="container-fluid px-3 px-lg-4 py-4">
                     @RenderBody()
                 </div>

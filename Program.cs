@@ -44,6 +44,11 @@ builder.Services.AddRazorPages();
 // ---------------------------------------------------------------------------
 builder.Services.AddDataProtection();
 builder.Services.AddSingleton<SubmissionAccessService>();
+builder.Services.AddSingleton<DonationReviewService>();
+builder.Services.AddScoped<ExperienceService>();
+builder.Services.Configure<EmailOptions>(builder.Configuration.GetSection("Email"));
+builder.Services.AddTransient<INotificationEmailSender, SmtpNotificationEmailSender>();
+builder.Services.AddHostedService<EmailNotificationWorker>();
 builder.Services.AddHttpClient("GiftOfTheGiversFunctions", client =>
 {
     var url = builder.Configuration["AzureFunctions:BaseUrl"];
@@ -84,6 +89,7 @@ app.UseAuthorization();
 
 app.MapStaticAssets();
 
+app.MapAreaControllerRoute("staff-projects", "Staff", "Staff/Projects/{action=Index}/{id?}", new { controller = "Projects" });
 app.MapAreaControllerRoute(
     name: "staff",
     areaName: "Staff",

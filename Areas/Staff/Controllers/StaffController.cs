@@ -18,12 +18,16 @@ namespace GiftOfTheGivers.Areas.Staff.Controllers;
 public class StaffController : Controller
 {
     private readonly ApplicationDbContext _db;
+    private readonly ExperienceService _experience;
+    private readonly IConfiguration _config;
     private readonly HttpClient _functions;
     private readonly ILogger<StaffController> _logger;
 
-    public StaffController(ApplicationDbContext db, IHttpClientFactory clients, ILogger<StaffController> logger)
+    public StaffController(ApplicationDbContext db, IHttpClientFactory clients, ILogger<StaffController> logger, ExperienceService experience, IConfiguration config)
     {
         _db = db;
+        _experience = experience;
+        _config = config;
         _functions = clients.CreateClient("GiftOfTheGiversFunctions");
         _logger = logger;
     }
@@ -33,6 +37,8 @@ public class StaffController : Controller
     {
         return View(new StaffDashboardViewModel
         {
+            PendingVolunteerCount = await _db.Volunteers.CountAsync(v => v.Status == "Pending"),
+            ActiveProjectCount = await _db.ReliefProjects.CountAsync(p => p.IsActive),
             VolunteerCount = await _db.Volunteers.CountAsync(),
             DonationCount = await _db.Donations.CountAsync(),
             UpdateCount = await _db.ProjectUpdates.CountAsync(),
@@ -53,11 +59,12 @@ public class StaffController : Controller
     }
 
     // ---- Volunteer applications --------------------------------------------
-    public async Task<IActionResult> Volunteers()
+    public async Task<IActionResult> Volunteers(string? q, string? status, int page = 1)
     {
-        return View(await _db.Volunteers
-            .OrderByDescending(v => v.SignUpDate)
-            .ToListAsync());
+        var query = _db.Volunteers.AsNoTracking().AsQueryable();
+        if (!string.IsNullOrWhiteSpace(q)) { var term = q.Trim().ToLowerInvariant(); query = query.Where(v => v.FullName.ToLower().Contains(term) || v.Email.ToLower().Contains(term) || (v.Skills != null && v.Skills.ToLower().Contains(term))); }
+        if (status is "Pending" or "Approved" or "Declined") query = query.Where(v => v.Status == status);
+        return View(await ExperienceService.PageAsync(query.OrderByDescending(v => v.SignUpDate).ThenByDescending(v => v.Id), page));
     }
 
     [HttpPost]
@@ -67,12 +74,17 @@ public class StaffController : Controller
         var volunteer = await _db.Volunteers.FindAsync(id);
         if (volunteer == null) return NotFound();
 
-        if (status is "Approved" or "Declined" or "Pending")
-        {
-            volunteer.Status = status;
-            await _db.SaveChangesAsync();
-            TempData["Flash"] = $"{volunteer.FullName}'s application is now {status}.";
-        }
+        if (status is not ("Approved" or "Declined" or "Pending")) return BadRequest();
+        if (volunteer.Status == status) return RedirectToAction(nameof(Volunteers));
+        var previous = volunteer.Status;
+        volunteer.Status = status;
+        var next = status == "Approved" ? "Your application has been approved. Our team will contact you about available opportunities."
+            : status == "Declined" ? "Your application was declined. You can contact the support team to discuss future opportunities."
+            : "Your application is awaiting review. No further action is needed right now.";
+        _experience.Notify(volunteer.UserId, volunteer.Email, $"Volunteer application: {status}", $"Hello {volunteer.FullName}. {next}");
+        _experience.Audit(User, "Status changed", "Volunteer", id, $"Application changed from {previous} to {status}.");
+        await _db.SaveChangesAsync();
+        TempData["Flash"] = $"{volunteer.FullName}'s application is now {status}.";
 
         return RedirectToAction(nameof(Volunteers));
     }
@@ -116,6 +128,7 @@ public class StaffController : Controller
         update.PostedAt = DateTime.Now;
 
         _db.ProjectUpdates.Add(update);
+        _experience.Audit(User, "Update posted", "Project", update.ReliefProjectId, $"Posted field update: {update.Title}");
         await _db.SaveChangesAsync();
 
         TempData["Flash"] = "Update posted successfully.";
@@ -160,21 +173,40 @@ public class StaffController : Controller
     }
 
     // ---- Donations -----------------------------------------------------------
-    public async Task<IActionResult> Donations()
+    public async Task<IActionResult> Donations(string? q, string? currency, DateTime? from, DateTime? to, int page = 1)
     {
-        var donations = await _db.Donations.OrderByDescending(d => d.DonationDate).ToListAsync();
-        var zarAmounts = donations.Where(d => d.Currency == "ZAR").Select(d => d.Amount).ToList();
-
-        // SECTION D.2 EVIDENCE: Using GiftOfTheGivers.Helpers to compute metrics
-        var totalZar = DonationMetricsHelper.CalculateTotal(zarAmounts);
-        var averageZar = DonationMetricsHelper.CalculateAverage(zarAmounts);
-
-        ViewBag.TotalZar = totalZar;
-        ViewBag.AverageZar = averageZar;
-        ViewBag.FormattedTotal = DonationMetricsHelper.FormatZar(totalZar);
-        ViewBag.FormattedAverage = DonationMetricsHelper.FormatZar(averageZar);
-        ViewBag.DonationCount = donations.Count;
-        return View(donations);
+        var query = _db.Donations.AsNoTracking().Include(d => d.ReliefProject).AsQueryable();
+        if (!string.IsNullOrWhiteSpace(q)) { var term = q.Trim().ToLowerInvariant(); query = query.Where(d => d.DonorName.ToLower().Contains(term) || d.Email.ToLower().Contains(term) || d.ReferenceNumber.ToLower().Contains(term)); }
+        if (currency is "ZAR" or "USD" or "EUR") query = query.Where(d => d.Currency == currency);
+        if (from != null) query = query.Where(d => d.DonationDate >= from.Value.Date);
+        if (to != null) { var end = to.Value.Date.AddDays(1); query = query.Where(d => d.DonationDate < end); }
+        return View(await ExperienceService.PageAsync(query.OrderByDescending(d => d.DonationDate).ThenByDescending(d => d.Id), page));
+    }
+    public async Task<IActionResult> Audit(string? q, int page = 1)
+    {
+        var query = _db.StaffAuditEntries.AsNoTracking().AsQueryable();
+        if (!string.IsNullOrWhiteSpace(q)) { var term = q.Trim().ToLowerInvariant(); query = query.Where(a => a.ActorName.ToLower().Contains(term) || a.Action.ToLower().Contains(term) || a.Summary.ToLower().Contains(term)); }
+        return View(await ExperienceService.PageAsync(query.OrderByDescending(a => a.OccurredAtUtc).ThenByDescending(a => a.Id), page, 20));
+    }
+    public async Task<IActionResult> Diagnostics() => View(new DiagnosticsViewModel
+    {
+        FunctionsConfigured = !string.IsNullOrWhiteSpace(_config["AzureFunctions:BaseUrl"]) && !string.IsNullOrWhiteSpace(_config["AzureFunctions:FunctionKey"]),
+        EmailEnabled = _config.GetValue<bool>("Email:Enabled"),
+        EmailConfigured = new EmailOptions { Host = _config["Email:Host"] ?? "", FromAddress = _config["Email:FromAddress"] ?? "" }.IsConfigured,
+        PendingEmailCount = await _db.Notifications.CountAsync(n => n.SentAtUtc == null),
+        FailedEmailCount = await _db.Notifications.CountAsync(n => n.SentAtUtc == null && n.DeliveryAttempts >= 5),
+        RecentDeliveries = await _db.Notifications.OrderByDescending(n => n.CreatedAtUtc).Take(20).ToListAsync()
+    });
+    [HttpPost, ValidateAntiForgeryToken]
+    public async Task<IActionResult> RetryEmail(int id)
+    {
+        var notification = await _db.Notifications.FindAsync(id);
+        if (notification == null) return NotFound();
+        if (notification.SentAtUtc != null || notification.DeliveryAttempts < 5) return BadRequest();
+        notification.DeliveryAttempts = 0; notification.NextAttemptAtUtc = null; notification.LastDeliveryError = null;
+        _experience.Audit(User, "Email retry", "Notification", id, "Queued a failed notification for delivery retry.");
+        await _db.SaveChangesAsync();
+        TempData["Flash"] = "Notification queued. Delivery requires enabled, configured SMTP.";
+        return RedirectToAction(nameof(Diagnostics));
     }
 }
-

@@ -1,3 +1,4 @@
+using GiftOfTheGivers.Services;
 using Microsoft.AspNetCore.Antiforgery;
 using Microsoft.AspNetCore.Http;
 using System.Net;
@@ -29,6 +30,7 @@ public class StaffSubmissionTests
             .ConfigureServices(services =>
             {
                 services.AddLogging();
+                services.AddScoped<ExperienceService>();
                 services.AddDbContext<ApplicationDbContext>(o => o.UseInMemoryDatabase(dbName));
                 services.AddHttpClient();
                 services.AddAuthentication("test").AddScheme<AuthenticationSchemeOptions, StaffAuthentication>("test", _ => { });
