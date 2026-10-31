@@ -1,0 +1,9 @@
+{
+  "IsEncrypted": false,
+  "Values": {
+    "AzureWebJobsStorage": "UseDevelopmentStorage=true",
+    "FUNCTIONS_WORKER_RUNTIME": "dotnet-isolated",
+    "ConnectionStrings__DefaultConnection": "Server=localhost;Database=GiftOfTheGiversDb;Trusted_Connection=True;TrustServerCertificate=True",
+    "AuditStorageConnectionString": "UseDevelopmentStorage=true"
+  }
+}

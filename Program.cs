@@ -1,8 +1,7 @@
-using GiftOfTheGivers.Data;
+using GiftOfTheGivers.Helpers.Data;
 using GiftOfTheGivers.Services;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Diagnostics;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -20,9 +19,6 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
 {
     options.UseSqlServer(connectionString);
 
-    // Prevents EF Core 9 from throwing 'PendingModelChangesWarning' crashes
-    options.ConfigureWarnings(warnings =>
-        warnings.Ignore(RelationalEventId.PendingModelChangesWarning));
 });
 
 builder.Services.AddDatabaseDeveloperPageExceptionFilter();
@@ -46,7 +42,24 @@ builder.Services.AddRazorPages();
 // ---------------------------------------------------------------------------
 // 3. Section A / D: Azure Functions HTTP client & Helper integration
 // ---------------------------------------------------------------------------
-builder.Services.AddHttpClient<ITaxCertificateService, TaxCertificateService>();
+builder.Services.AddDataProtection();
+builder.Services.AddSingleton<SubmissionAccessService>();
+builder.Services.AddHttpClient("GiftOfTheGiversFunctions", client =>
+{
+    var url = builder.Configuration["AzureFunctions:BaseUrl"];
+    if (!string.IsNullOrWhiteSpace(url))
+    {
+        client.BaseAddress = new Uri(url.TrimEnd('/') + "/");
+    }
+    client.Timeout = TimeSpan.FromSeconds(10);
+    var key = builder.Configuration["AzureFunctions:FunctionKey"];
+    if (!string.IsNullOrWhiteSpace(key)) client.DefaultRequestHeaders.Add("x-functions-key", key);
+});
+builder.Services.AddHttpClient<ITaxCertificateService, TaxCertificateService>(client =>
+{
+    var key = builder.Configuration["AzureFunctions:FunctionKey"];
+    if (!string.IsNullOrWhiteSpace(key)) client.DefaultRequestHeaders.Add("x-functions-key", key);
+});
 
 var app = builder.Build();
 
@@ -104,7 +117,8 @@ using (var scope = app.Services.CreateScope())
     // ProjectUpdates) from the EF migrations, then seed roles + demo data.
     await context.Database.MigrateAsync();
 
-    await DbSeeder.SeedAsync(services);
+    await DbSeeder.SeedAsync(services, app.Environment.IsDevelopment() && builder.Configuration.GetValue<bool>("SeedDemoData"));
 }
 
 app.Run();
+

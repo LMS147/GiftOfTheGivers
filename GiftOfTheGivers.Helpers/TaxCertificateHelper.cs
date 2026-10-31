@@ -54,8 +54,7 @@ public static class TaxCertificateHelper
     /// </summary>
     public static string GetLegalComplianceNotice()
     {
-        return "This receipt is issued in terms of Section 18A(1)(a) of the Income Tax Act 58 of 1962. " +
-               "The donation will be used exclusively for approved Public Benefit Activities.";
+        return "Student prototype. No payment has been processed. This is not a valid tax certificate.";
     }
 
     /// <summary>
@@ -63,8 +62,9 @@ public static class TaxCertificateHelper
     /// </summary>
     public static string GenerateVerificationHash(string certNumber, decimal amount, string donorEmail)
     {
-        var rawData = $"{certNumber}:{amount:F2}:{donorEmail.ToLowerInvariant()}:{OfficialPboNumber}";
+        var rawData = $"{certNumber}:{amount.ToString("F2", System.Globalization.CultureInfo.InvariantCulture)}:{donorEmail.ToLowerInvariant()}:{OfficialPboNumber}";
         var hashBytes = SHA256.HashData(Encoding.UTF8.GetBytes(rawData));
         return Convert.ToHexString(hashBytes)[..16];
     }
 }
+

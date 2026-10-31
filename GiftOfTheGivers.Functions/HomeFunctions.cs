@@ -29,7 +29,7 @@ public class HomeFunctions
     // ============================================================
     [Function("GetHomeSummary")]
     public async Task<HttpResponseData> GetHomeSummary(
-        [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "home/summary")] HttpRequestData req)
+        [HttpTrigger(AuthorizationLevel.Function, "get", Route = "home/summary")] HttpRequestData req)
     {
         // 1. Fetch latest field updates
         var latestUpdates = await _context.ProjectUpdates
@@ -72,7 +72,7 @@ public class HomeFunctions
     // ============================================================
     [Function("GetProjects")]
     public async Task<HttpResponseData> GetProjects(
-        [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "projects")] HttpRequestData req)
+        [HttpTrigger(AuthorizationLevel.Function, "get", Route = "projects")] HttpRequestData req)
     {
         var projects = await _context.ReliefProjects
             .Include(p => p.Updates)
@@ -92,7 +92,7 @@ public class HomeFunctions
     // ============================================================
     [Function("GetUpdates")]
     public async Task<HttpResponseData> GetUpdates(
-        [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "updates")] HttpRequestData req)
+        [HttpTrigger(AuthorizationLevel.Function, "get", Route = "updates")] HttpRequestData req)
     {
         var updates = await _context.ProjectUpdates
             .Include(u => u.ReliefProject)
@@ -104,3 +104,4 @@ public class HomeFunctions
         return response;
     }
 }
+

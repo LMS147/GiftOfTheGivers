@@ -1,100 +1,52 @@
-using System.Text.Json;
-using System.Text.Json.Serialization;
+using Azure.Storage.Blobs;
+using GiftOfTheGivers.Helpers.Data;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Azure.Functions.Worker;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
+using System.Text.Json;
 
 namespace GiftOfTheGivers.Functions;
 
-/// <summary>
-/// Section A.1: HTTP-triggered Azure Function that logs a project field update
-/// when an employee/staff member submits new information from the field.
-/// </summary>
 public class LogProjectUpdateFunction
 {
+    private readonly ApplicationDbContext _db;
+    private readonly IConfiguration _config;
     private readonly ILogger<LogProjectUpdateFunction> _logger;
-
-    public LogProjectUpdateFunction(ILogger<LogProjectUpdateFunction> logger)
-    {
-        _logger = logger;
-    }
+    public LogProjectUpdateFunction(ApplicationDbContext db, IConfiguration config, ILogger<LogProjectUpdateFunction> logger)
+    { _db = db; _config = config; _logger = logger; }
 
     [Function("LogProjectUpdate")]
     public async Task<IActionResult> Run(
-        [HttpTrigger(AuthorizationLevel.Anonymous, "post", Route = "log-update")] HttpRequest req)
+        [HttpTrigger(AuthorizationLevel.Function, "post", Route = "log-update")] HttpRequest req)
     {
-        _logger.LogInformation("Processing employee project update logging request");
-
+        AuditRequest? payload;
+        try { payload = await JsonSerializer.DeserializeAsync<AuditRequest>(req.Body,
+            new JsonSerializerOptions { PropertyNameCaseInsensitive = true }); }
+        catch (JsonException) { return new BadRequestObjectResult("Invalid JSON."); }
+        if (payload == null || payload.UpdateId <= 0) return new BadRequestObjectResult("A positive updateId is required.");
+        var update = await _db.ProjectUpdates.FindAsync(payload.UpdateId);
+        if (update == null) return new NotFoundResult();
+        var connection = _config["AuditStorageConnectionString"];
+        if (string.IsNullOrWhiteSpace(connection))
+            return new ObjectResult(new { success = false, error = "Audit storage is not configured." }) { StatusCode = 503 };
         try
         {
-            using var reader = new StreamReader(req.Body);
-            var body = await reader.ReadToEndAsync();
-
-            if (string.IsNullOrWhiteSpace(body))
+            var container = new BlobContainerClient(connection, "project-update-audits");
+            await container.CreateIfNotExistsAsync(); // Private container by default.
+            var blobName = $"update-{update.Id}.json";
+            await container.GetBlobClient(blobName).UploadAsync(BinaryData.FromObjectAsJson(new
             {
-                return new BadRequestObjectResult(new
-                {
-                    success = false,
-                    error = "Request body cannot be empty."
-                });
-            }
-
-            var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
-            var update = JsonSerializer.Deserialize<ProjectUpdateLogDto>(body, options);
-
-            if (update == null || string.IsNullOrWhiteSpace(update.Title))
-            {
-                return new BadRequestObjectResult(new
-                {
-                    success = false,
-                    error = "Project update must contain at least a Title and ProjectId."
-                });
-            }
-
-            var logId = $"LOG-{DateTime.UtcNow:yyyyMMdd}-{Guid.NewGuid().ToString("N")[..8].ToUpperInvariant()}";
-            var timestamp = DateTime.UtcNow;
-
-            _logger.LogInformation(
-                "Audit Log [{LogId}]: Project {ProjectId} update posted by {Author} ('{Title}')",
-                logId, update.ProjectId, update.AuthorEmail ?? "Staff", update.Title);
-
-            // Returns simulated / audit logging confirmation
-            return new OkObjectResult(new
-            {
-                success = true,
-                logId = logId,
-                projectId = update.ProjectId,
-                title = update.Title,
-                authorEmail = update.AuthorEmail ?? "staff@gotg.org",
-                timestampUtc = timestamp,
-                status = "AuditLogStored",
-                destination = "Azure Storage Audit Container: /audit-logs/project-updates",
-                message = "Employee project update successfully validated and stored."
-            });
+                update.Id, update.ReliefProjectId, update.Title, update.Body, update.PostedByName, update.PostedAt
+            }), overwrite: true);
+            return new OkObjectResult(new { success = true, updateId = update.Id, status = "AuditLogStored", blobName });
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error processing project update log");
-            return new StatusCodeResult(StatusCodes.Status500InternalServerError);
+            _logger.LogError(ex, "Could not persist audit for update {UpdateId}", update.Id);
+            return new StatusCodeResult(StatusCodes.Status503ServiceUnavailable);
         }
     }
-}
-
-public class ProjectUpdateLogDto
-{
-    [JsonPropertyName("projectId")]
-    public int ProjectId { get; set; }
-
-    [JsonPropertyName("title")]
-    public string Title { get; set; } = string.Empty;
-
-    [JsonPropertyName("content")]
-    public string? Content { get; set; }
-
-    [JsonPropertyName("authorEmail")]
-    public string? AuthorEmail { get; set; }
-
-    [JsonPropertyName("location")]
-    public string? Location { get; set; }
+    private sealed class AuditRequest { public int UpdateId { get; set; } }
 }

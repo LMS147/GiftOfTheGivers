@@ -1,3 +1,5 @@
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using Azure.Monitor.OpenTelemetry.Exporter;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.Azure.Functions.Worker.Builder;
@@ -7,6 +9,11 @@ using Microsoft.Extensions.Hosting;
 using OpenTelemetry;
 
 var builder = FunctionsApplication.CreateBuilder(args);
+var connectionString = builder.Configuration.GetConnectionString("DefaultConnection")
+    ?? builder.Configuration["DefaultConnection"]
+    ?? throw new InvalidOperationException("Configure ConnectionStrings:DefaultConnection for the Functions database.");
+builder.Services.AddDbContext<GiftOfTheGivers.Helpers.Data.ApplicationDbContext>(options =>
+    options.UseSqlServer(connectionString));
 
 builder.ConfigureFunctionsWebApplication();
 
@@ -18,3 +25,4 @@ if (!string.IsNullOrEmpty(Environment.GetEnvironmentVariable("APPLICATIONINSIGHT
 }
 
 builder.Build().Run();
+

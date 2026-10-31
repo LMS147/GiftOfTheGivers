@@ -7,6 +7,7 @@ using Microsoft.Azure.Functions.Worker;
 using Microsoft.Azure.Functions.Worker.Http;
 using Microsoft.Extensions.Logging;
 using System.Net;
+using System.ComponentModel.DataAnnotations;
 using Microsoft.EntityFrameworkCore;
 
 namespace GiftOfTheGivers.Functions;
@@ -35,7 +36,7 @@ public class DonationFunctions
 
     [Function("GetDonations")]
     public async Task<HttpResponseData> GetDonations(
-        [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "donations")] HttpRequestData req)
+        [HttpTrigger(AuthorizationLevel.Function, "get", Route = "donations")] HttpRequestData req)
     {
         // Retrieve all donations from the database (via Class Library model & DbContext).
         // ToListAsync() executes the query asynchronously.
@@ -62,7 +63,7 @@ public class DonationFunctions
 
     [Function("GetDonationById")]
     public async Task<HttpResponseData> GetDonationById(
-        [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "donations/{id:int}")] HttpRequestData req, int id)
+        [HttpTrigger(AuthorizationLevel.Function, "get", Route = "donations/{id:int}")] HttpRequestData req, int id)
     {
         // Search the database for a donation whose primary key
         // matches the ID received from the URL.
@@ -93,13 +94,13 @@ public class DonationFunctions
 
     [Function("CreateDonation")]
     public async Task<HttpResponseData> CreateDonation(
-        [HttpTrigger(AuthorizationLevel.Anonymous, "post", Route = "donations")] HttpRequestData req)
+        [HttpTrigger(AuthorizationLevel.Function, "post", Route = "donations")] HttpRequestData req)
     {
         // Read the JSON data sent in the HTTP request body and convert it into a Donation object.
         var donation = await req.ReadFromJsonAsync<Donation>();
 
         // If the request did not contain valid donation data, return: 400 Bad Request
-        if (donation == null || donation.Amount <= 0)
+        if (donation == null || !Validator.TryValidateObject(donation, new ValidationContext(donation), new List<ValidationResult>(), true))
         {
             return req.CreateResponse(HttpStatusCode.BadRequest);
         }
@@ -110,6 +111,8 @@ public class DonationFunctions
         }
 
         // Add the new donation to the database.
+        donation.Id = 0;
+        donation.DonationDate = DateTime.UtcNow;
         _context.Donations.Add(donation);
         await _context.SaveChangesAsync();
 
@@ -137,7 +140,7 @@ public class DonationFunctions
 
     [Function("GenerateTaxCertificateById")]
     public async Task<HttpResponseData> GenerateTaxCertificateById(
-        [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "donations/{id:int}/certificate")] HttpRequestData req, int id)
+        [HttpTrigger(AuthorizationLevel.Function, "get", Route = "donations/{id:int}/certificate")] HttpRequestData req, int id)
     {
         var donation = await _context.Donations.FindAsync(id);
         if (donation == null)
@@ -190,7 +193,7 @@ public class DonationFunctions
 
     [Function("DeleteDonation")]
     public async Task<HttpResponseData> DeleteDonation(
-        [HttpTrigger(AuthorizationLevel.Anonymous, "delete", Route = "donations/{id:int}")] HttpRequestData req, int id)
+        [HttpTrigger(AuthorizationLevel.Function, "delete", Route = "donations/{id:int}")] HttpRequestData req, int id)
     {
         // Find the donation that must be deleted using the ID received from the URL.
         var donation = await _context.Donations.FindAsync(id);
@@ -211,3 +214,4 @@ public class DonationFunctions
         return req.CreateResponse(HttpStatusCode.NoContent);
     }
 }
+

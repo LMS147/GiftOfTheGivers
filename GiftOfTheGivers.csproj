@@ -1,8 +1,9 @@
-﻿<Project Sdk="Microsoft.NET.Sdk.Web">
+<Project Sdk="Microsoft.NET.Sdk.Web">
 
   <PropertyGroup>
     <TargetFramework>net9.0</TargetFramework>
     <Nullable>enable</Nullable>
+    <HelperPackageVersion Condition="'$(HelperPackageVersion)' == ''">1.0.1</HelperPackageVersion>
     <ImplicitUsings>enable</ImplicitUsings>
     <UserSecretsId>aspnet-GiftOfTheGivers-e01789bb-c31b-497f-bd5e-11897265a2c3</UserSecretsId>
   </PropertyGroup>
@@ -23,10 +24,13 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="GiftOfTheGivers.Helpers\GiftOfTheGivers.Helpers.csproj" />
+    <ProjectReference Include="GiftOfTheGivers.Helpers\GiftOfTheGivers.Helpers.csproj" Condition="'$(UseHelperPackage)' != 'true'" />
+    <PackageReference Include="GiftOfTheGivers.Helpers" Version="$(HelperPackageVersion)" Condition="'$(UseHelperPackage)' == 'true'" />
   </ItemGroup>
 
   <ItemGroup>
+    <Compile Remove="GiftOfTheGivers.Tests\**" />
+    <Content Remove="GiftOfTheGivers.Tests\**" />
     <Compile Remove="GiftOfTheGivers.Functions\**" />
     <Compile Remove="GiftOfTheGivers.Helpers\**" />
     <EmbeddedResource Remove="GiftOfTheGivers.Functions\**" />
@@ -36,3 +40,4 @@
   </ItemGroup>
 
 </Project>
+

@@ -7,6 +7,7 @@ using Microsoft.Azure.Functions.Worker.Http;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using System.Net;
+using System.ComponentModel.DataAnnotations;
 
 namespace GiftOfTheGivers.Functions;
 
@@ -32,7 +33,7 @@ public class VolunteerFunctions
     // ============================================================
     [Function("GetVolunteers")]
     public async Task<HttpResponseData> GetVolunteers(
-        [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "volunteers")] HttpRequestData req)
+        [HttpTrigger(AuthorizationLevel.Function, "get", Route = "volunteers")] HttpRequestData req)
     {
         var volunteers = await _context.Volunteers
             .OrderByDescending(v => v.SignUpDate)
@@ -51,7 +52,7 @@ public class VolunteerFunctions
     // ============================================================
     [Function("GetVolunteerById")]
     public async Task<HttpResponseData> GetVolunteerById(
-        [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "volunteers/{id:int}")] HttpRequestData req, int id)
+        [HttpTrigger(AuthorizationLevel.Function, "get", Route = "volunteers/{id:int}")] HttpRequestData req, int id)
     {
         var volunteer = await _context.Volunteers.FindAsync(id);
 
@@ -73,11 +74,11 @@ public class VolunteerFunctions
     // ============================================================
     [Function("CreateVolunteer")]
     public async Task<HttpResponseData> CreateVolunteer(
-        [HttpTrigger(AuthorizationLevel.Anonymous, "post", Route = "volunteers")] HttpRequestData req)
+        [HttpTrigger(AuthorizationLevel.Function, "post", Route = "volunteers")] HttpRequestData req)
     {
         var volunteer = await req.ReadFromJsonAsync<Volunteer>();
 
-        if (volunteer == null || string.IsNullOrWhiteSpace(volunteer.FullName))
+        if (volunteer == null || !Validator.TryValidateObject(volunteer, new ValidationContext(volunteer), new List<ValidationResult>(), true))
         {
             return req.CreateResponse(HttpStatusCode.BadRequest);
         }
@@ -87,6 +88,9 @@ public class VolunteerFunctions
             volunteer.SignUpDate = DateTime.Now;
         }
 
+        volunteer.Id = 0;
+        volunteer.SignUpDate = DateTime.UtcNow;
+        volunteer.Status = "Pending";
         _context.Volunteers.Add(volunteer);
         await _context.SaveChangesAsync();
 
@@ -103,7 +107,7 @@ public class VolunteerFunctions
     // ============================================================
     [Function("UpdateVolunteerStatus")]
     public async Task<HttpResponseData> UpdateVolunteerStatus(
-        [HttpTrigger(AuthorizationLevel.Anonymous, "put", Route = "volunteers/{id:int}/status")] HttpRequestData req, int id)
+        [HttpTrigger(AuthorizationLevel.Function, "put", Route = "volunteers/{id:int}/status")] HttpRequestData req, int id)
     {
         var volunteer = await _context.Volunteers.FindAsync(id);
 
@@ -113,7 +117,9 @@ public class VolunteerFunctions
         }
 
         var statusUpdate = await req.ReadFromJsonAsync<VolunteerStatusUpdateDto>();
-        if (statusUpdate != null && !string.IsNullOrWhiteSpace(statusUpdate.Status))
+        if (statusUpdate?.Status is not ("Pending" or "Approved" or "Declined"))
+            return req.CreateResponse(HttpStatusCode.BadRequest);
+        if (statusUpdate != null)
         {
             volunteer.Status = statusUpdate.Status;
             await _context.SaveChangesAsync();
@@ -132,7 +138,7 @@ public class VolunteerFunctions
     // ============================================================
     [Function("DeleteVolunteer")]
     public async Task<HttpResponseData> DeleteVolunteer(
-        [HttpTrigger(AuthorizationLevel.Anonymous, "delete", Route = "volunteers/{id:int}")] HttpRequestData req, int id)
+        [HttpTrigger(AuthorizationLevel.Function, "delete", Route = "volunteers/{id:int}")] HttpRequestData req, int id)
     {
         var volunteer = await _context.Volunteers.FindAsync(id);
 
@@ -152,4 +158,5 @@ public class VolunteerStatusUpdateDto
 {
     public string Status { get; set; } = string.Empty;
 }
+
 
