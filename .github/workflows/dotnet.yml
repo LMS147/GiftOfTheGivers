@@ -54,8 +54,8 @@ jobs:
       GOTG_TEST_SQL: Server=localhost,1433;Database=master;User Id=sa;Password=SqlTestOnly!2026;Encrypt=True;TrustServerCertificate=True
       GOTG_REPO_ROOT: ${{ github.workspace }}
       GOTG_EVIDENCE_DIR: ${{ github.workspace }}/TestResults/Assignment
-      GOTG_WEB_PUBLISH_DIR: ${{ runner.temp }}/gotg-published/web
-      GOTG_FUNCTIONS_PUBLISH_DIR: ${{ runner.temp }}/gotg-published/functions
+      GOTG_WEB_PUBLISH_DIR: /tmp/gotg-published/web
+      GOTG_FUNCTIONS_PUBLISH_DIR: /tmp/gotg-published/functions
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-dotnet@v4
