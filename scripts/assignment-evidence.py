@@ -14,8 +14,8 @@ def table(rows):
  if not rows:return '<p class="missing">No result file was produced. This section is unverified.</p>'
  return '<table><thead><tr><th>Test</th><th>Outcome</th><th>Duration</th></tr></thead><tbody>'+''.join(f'<tr><td>{h(n)}</td><td class="{("pass" if o=="Passed" else "fail")}">{h(o)}</td><td>{h(d)}</td></tr>' for n,o,d in rows)+'</tbody></table>'
 def load(name):
- p=root/name
- return json.loads(p.read_text()) if p.exists() else None
+ candidates=sorted(root.rglob(name),key=lambda p:p.stat().st_mtime)
+ return json.loads(candidates[-1].read_text()) if candidates else None
 unit=results('assignment-unit.trx');system=results('assignment-system.trx')
 integration=load('integration-result.json');performance=load('load-stress-result.json');environment=load('environment.json')
 sections=[]
