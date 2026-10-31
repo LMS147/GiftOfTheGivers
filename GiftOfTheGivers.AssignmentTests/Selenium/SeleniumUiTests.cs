@@ -20,7 +20,7 @@ public class SeleniumUiTests(AssignmentEnvironment environment, ITestOutputHelpe
             browser.FindElement(By.Id("Input_Email")).SendKeys(AssignmentEnvironment.EmployeeEmail);
             browser.FindElement(By.Id("Input_Password")).SendKeys(AssignmentEnvironment.EmployeePassword);
             Capture(browser, "A4-employee-login-form.png");
-            browser.FindElement(By.CssSelector("#account button[type='submit']")).Click();
+            Click(browser, browser.FindElement(By.CssSelector("#account button[type='submit']")));
             Wait(browser).Until(driver => new Uri(driver.Url).AbsolutePath.StartsWith("/Staff", StringComparison.OrdinalIgnoreCase));
             Assert.Contains("Staff", browser.FindElement(By.CssSelector(".dash-role-badge")).Text, StringComparison.OrdinalIgnoreCase);
             Assert.Contains("Volunteer applications", browser.FindElement(By.CssSelector(".dash-sidebar")).Text, StringComparison.OrdinalIgnoreCase);
@@ -44,11 +44,11 @@ public class SeleniumUiTests(AssignmentEnvironment environment, ITestOutputHelpe
             new SelectElement(browser.FindElement(By.Id("Currency"))).SelectByText("ZAR");
             new SelectElement(browser.FindElement(By.Id("ReliefProjectId"))).SelectByValue(environment.ProjectId.ToString());
             Capture(browser, "A4-anonymous-donation-form.png");
-            browser.FindElement(By.CssSelector("form[action*='Review'] button[type='submit']")).Click();
+            Click(browser, browser.FindElement(By.CssSelector("form[action*='Review'] button[type='submit']")));
             Wait(browser).Until(driver => driver.FindElements(By.CssSelector("input[name='reviewToken']")).Count == 1);
             Assert.Contains("250.50", browser.FindElement(By.CssSelector(".review-amount")).Text);
             Capture(browser, "A4-anonymous-donation-review.png");
-            browser.FindElement(By.CssSelector("form input[name='reviewToken']")).FindElement(By.XPath("..")).FindElement(By.CssSelector("button[type='submit']")).Click();
+            Click(browser, browser.FindElement(By.CssSelector("form input[name='reviewToken']")).FindElement(By.XPath("..")).FindElement(By.CssSelector("button[type='submit']")));
             Wait(browser).Until(driver => new Uri(driver.Url).AbsolutePath.Contains("/Donations/Certificate/", StringComparison.OrdinalIgnoreCase));
             Assert.Contains("Selenium Anonymous Donor", browser.FindElement(By.TagName("h1")).Text);
             Assert.Contains("250.50", browser.FindElement(By.CssSelector(".receipt-card")).Text);
@@ -75,6 +75,14 @@ public class SeleniumUiTests(AssignmentEnvironment environment, ITestOutputHelpe
         var browser = new ChromeDriver(service, options, TimeSpan.FromSeconds(90));
         browser.Manage().Timeouts().PageLoad = TimeSpan.FromSeconds(45);
         return browser;
+    }
+    private static void Click(ChromeDriver browser, IWebElement element)
+    {
+        // Site CSS uses smooth scrolling. Complete the scroll before WebDriver's real click.
+        browser.ExecuteScript("arguments[0].scrollIntoView({block:'center',inline:'nearest',behavior:'instant'});", element);
+        Wait(browser).Until(_ => element.Displayed && element.Enabled && (bool)browser.ExecuteScript(
+            "const e=arguments[0],r=e.getBoundingClientRect();const hit=document.elementFromPoint(r.x+r.width/2,r.y+r.height/2);return hit===e||e.contains(hit);", element));
+        element.Click();
     }
     private static WebDriverWait Wait(IWebDriver browser) => new(browser, TimeSpan.FromSeconds(30));
     private void Capture(ITakesScreenshot browser, string name) => browser.GetScreenshot().SaveAsFile(Path.Combine(environment.EvidenceDirectory, name));
