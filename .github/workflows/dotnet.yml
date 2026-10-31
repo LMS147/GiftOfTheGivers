@@ -17,6 +17,13 @@ jobs:
       - run: dotnet test GiftOfTheGivers.Tests/GiftOfTheGivers.Tests.csproj --configuration Release --no-build --no-restore
         env:
           UI_SNAPSHOT_DIRECTORY: ${{ github.workspace }}/ui-snapshots
+      - name: A.1 assignment unit tests
+        run: dotnet test GiftOfTheGivers.AssignmentTests/GiftOfTheGivers.AssignmentTests.csproj -c Release --no-build --no-restore --filter "Category=Unit" --logger "trx;LogFileName=assignment-unit.trx" --results-directory TestResults/Assignment
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: assignment-unit-results
+          path: TestResults/Assignment/assignment-unit.trx
       - name: Check desktop and mobile layouts
         run: |
           npm install --prefix /tmp/gotg-ui-tools --no-package-lock playwright@1.56.1
@@ -27,3 +34,56 @@ jobs:
         with:
           name: rendered-pages
           path: ui-snapshots
+
+  assignment-system-tests:
+    needs: build-and-test
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    services:
+      sql:
+        image: mcr.microsoft.com/mssql/server:2022-latest
+        env:
+          ACCEPT_EULA: Y
+          MSSQL_SA_PASSWORD: SqlTestOnly!2026
+        ports:
+          - 1433:1433
+        options: >-
+          --health-cmd "/opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P 'SqlTestOnly!2026' -C -Q 'SELECT 1' -b -o /dev/null"
+          --health-interval 10s --health-timeout 5s --health-retries 12 --health-start-period 20s
+    env:
+      GOTG_TEST_SQL: Server=localhost,1433;Database=master;User Id=sa;Password=SqlTestOnly!2026;Encrypt=True;TrustServerCertificate=True
+      GOTG_REPO_ROOT: ${{ github.workspace }}
+      GOTG_EVIDENCE_DIR: ${{ github.workspace }}/TestResults/Assignment
+      GOTG_WEB_PUBLISH_DIR: ${{ runner.temp }}/gotg-published/web
+      GOTG_FUNCTIONS_PUBLISH_DIR: ${{ runner.temp }}/gotg-published/functions
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '9.0.x'
+      - name: Install local Functions, storage emulator and evidence browser
+        run: |
+          npm install --prefix "$RUNNER_TEMP/gotg-tools" --no-package-lock azure-functions-core-tools@4 azurite@3.35.0 playwright@1.56.1
+          echo "$RUNNER_TEMP/gotg-tools/node_modules/.bin" >> "$GITHUB_PATH"
+          "$RUNNER_TEMP/gotg-tools/node_modules/.bin/playwright" install --with-deps chromium
+      - name: Publish actual web and Functions applications
+        run: |
+          dotnet publish GiftOfTheGivers.csproj -c Release -o "$GOTG_WEB_PUBLISH_DIR"
+          dotnet publish GiftOfTheGivers.Functions/GiftOfTheGivers.Functions.csproj -c Release -o "$GOTG_FUNCTIONS_PUBLISH_DIR"
+      - name: A.2 integration, A.3 load/stress and A.4 Selenium
+        run: dotnet test GiftOfTheGivers.AssignmentTests/GiftOfTheGivers.AssignmentTests.csproj -c Release --filter "Category!=Unit" --logger "trx;LogFileName=assignment-system.trx" --results-directory TestResults/Assignment
+      - uses: actions/download-artifact@v4
+        if: always()
+        with:
+          name: assignment-unit-results
+          path: TestResults/Assignment/unit
+      - name: Render genuine measured evidence
+        if: always()
+        run: |
+          python3 scripts/assignment-evidence.py TestResults/Assignment
+          PLAYWRIGHT_MODULE="$RUNNER_TEMP/gotg-tools/node_modules/playwright" node scripts/capture-assignment-evidence.cjs TestResults/Assignment
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: assignment-a1-a4-evidence
+          path: TestResults/Assignment
