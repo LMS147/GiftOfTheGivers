@@ -5,7 +5,7 @@ ASP.NET Core MVC (.NET 9), Razor/Bootstrap, ASP.NET Core Identity, EF Core and S
 ## Projects
 
 - `GiftOfTheGivers.csproj`: public site, donation and volunteer forms, donor history, staff and volunteer areas.
-- `GiftOfTheGivers.Helpers`: models, database context, SQL migrations, seed roles/data, shared calculations. Packs as NuGet version 1.0.1.
+- `GiftOfTheGivers.Helpers`: models, database context, SQL migrations, seed roles/data, shared calculations. Packs as NuGet version 1.1.0.
 - `GiftOfTheGivers.Functions`: isolated Azure Functions for trusted CRUD, database-backed receipt generation and durable project-update audit blobs.
 - `GiftOfTheGivers.Tests`: access-control, Function authorization, audit-failure and migration-snapshot regression tests.
 
@@ -62,7 +62,7 @@ Publish the Functions project and web project separately. Start the web app once
 - Home metrics and staff donation reads can use Functions with a database fallback. Prototype receipt generation uses the saved donation ID and values; caller-supplied donor names/amounts are ignored.
 - Account-owned receipts and confirmation data are accessible only to the owner or Staff. Guest submissions grant their submitting browser a protected, HttpOnly cookie valid for 24 hours. Other browsers and guessed IDs cannot read the confirmation. Keep ASP.NET Core Data Protection keys persistent/shared across restarts and instances to preserve these grants.
 - Project updates are saved to SQL. If Functions are configured, staff posting calls `/api/log-update` with the saved update ID. The Function reads the saved update and uploads a private JSON blob. Missing/failed storage returns 503 and does not claim success. Staff can retry from the Updates page; stable blob names prevent duplicate audit objects. There is no automatic retry queue.
-- No schema tables were added. The migration snapshots now reference the actual shared-library model namespaces; migration drift is no longer hidden globally.
+- The experience upgrade adds Notifications and StaffAuditEntries tables, project categories/targets/status/images, and optional project/submission keys on donations. Back up your database before upgrading; startup applies migration 20261031090000_ExperienceUpgrade. Migration drift remains checked.
 
 ## Endpoint examples
 
@@ -76,11 +76,11 @@ Use a trusted server tool with an `x-functions-key` header:
 
 ## Shared helper package / Azure Artifacts
 
-The default build uses a project reference, so a private feed is not needed. To demonstrate consuming the package, publish version 1.0.1 to your own Azure Artifacts feed, authenticate using the Azure Artifacts Credential Provider, and restore/build with `UseHelperPackage=true`. Configure the feed locally without committing a PAT.
+The default build uses a project reference, so a private feed is not needed. To demonstrate consuming the package, publish version 1.1.0 to your own Azure Artifacts feed, authenticate using the Azure Artifacts Credential Provider, and restore/build with `UseHelperPackage=true`. Configure the feed locally without committing a PAT.
 
 ```bash
 dotnet pack GiftOfTheGivers.Helpers/GiftOfTheGivers.Helpers.csproj -c Release
-dotnet nuget push GiftOfTheGivers.Helpers/nupkg/GiftOfTheGivers.Helpers.1.0.1.nupkg --source YOUR_FEED_URL --api-key az
+dotnet nuget push GiftOfTheGivers.Helpers/nupkg/GiftOfTheGivers.Helpers.1.1.0.nupkg --source YOUR_FEED_URL --api-key az
 dotnet restore GiftOfTheGivers.csproj -p:UseHelperPackage=true --source https://api.nuget.org/v3/index.json --source YOUR_FEED_URL
 dotnet build GiftOfTheGivers.csproj -c Release -p:UseHelperPackage=true --no-restore
 ```
@@ -90,3 +90,34 @@ Publishing a package or deploying Azure resources still requires your actual Azu
 ## Automated checks
 
 `.github/workflows/dotnet.yml` builds all projects and runs the regression tests on pushes and pull requests. Unit tests do not require SQL Server or Azure; the migration consistency test builds the SQL model without connecting. Real SQL migration/application startup and successful Blob uploads still require an integration check against your configured services.
+
+
+## Donor and staff experience
+
+- `/Projects`: searchable/filterable project cards with local illustrations, project details, recent field updates, and explicitly labelled ZAR demo progress. Staff manage projects at `/Staff/Projects`; closing preserves history and stops new contributions.
+- `/Donations/Create`: Details → Review → Confirmation, with a protected 30-minute review token and unique submission key. Replaying a confirmed review returns the same record instead of creating a duplicate. Monthly remains a preference; payments stay in demo mode.
+- `/Donations/MyDonations`: paginated history, totals/averages grouped by currency, project links and protected PDF receipt downloads. Guests retain 24-hour browser access to their own receipts.
+- `/Staff`: pending applications and active projects have actionable summary cards. Volunteer and donation tables support server-side search, filters and pagination.
+- `/Notifications`: account-only in-app confirmations and decisions. `/Staff/Audit` provides read-only staff history for project edits, application decisions, field updates, deleted donation records and email retries.
+- `/Staff/Diagnostics`: configuration state and email delivery queue. Technical payloads have been removed from donor receipts. Configuration indicators do not assert service health.
+- Mobile navigation, skip links, focus outlines, labelled filters, reduced motion, loading feedback, duplicate-submit prevention and useful empty states are included.
+
+### Email notification setup
+
+Email is disabled by default, while in-app notifications and the durable queue work immediately. Configure these through user secrets or environment variables:
+
+| Setting | Example / purpose |
+|---|---|
+| `Email__Enabled` | `true` after testing |
+| `Email__Host` | Your SMTP hostname |
+| `Email__Port` | `587` for STARTTLS |
+| `Email__UseTls` | `true` |
+| `Email__Username` / `Email__Password` | SMTP credentials; never commit them |
+| `Email__FromAddress` | A sender address verified with your provider |
+| `Email__FromName` | Your portal's sender name |
+
+The worker claims up to 20 queued messages every 30 seconds, uses an atomic database claim to avoid two workers processing one attempt, retries failures with backoff and stops after five attempts. Staff can requeue exhausted messages from Diagnostics. SMTP delivery is at least once: a process crash after SMTP accepts an email but before the database acknowledgement can result in a duplicate. Use STARTTLS on port 587 (implicit TLS/465 is not supported by this SMTP adapter). No emails are sent until explicitly enabled and configured.
+
+The PDF receipt uses a standard built-in font; characters outside printable ASCII are replaced with `?`. The HTML receipt retains full names and remains printable through the browser.
+
+All targets and contribution totals are demonstration figures. Do not enable live payment collection for this student prototype; no payment gateway is configured.

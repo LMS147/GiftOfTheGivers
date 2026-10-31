@@ -78,7 +78,7 @@ public class VolunteerFunctions
     {
         var volunteer = await req.ReadFromJsonAsync<Volunteer>();
 
-        if (volunteer == null || !Validator.TryValidateObject(volunteer, new ValidationContext(volunteer), new List<ValidationResult>(), true))
+        if (volunteer == null || volunteer.Email.Length > 254 || !Validator.TryValidateObject(volunteer, new ValidationContext(volunteer), new List<ValidationResult>(), true))
         {
             return req.CreateResponse(HttpStatusCode.BadRequest);
         }
@@ -91,6 +91,7 @@ public class VolunteerFunctions
         volunteer.Id = 0;
         volunteer.SignUpDate = DateTime.UtcNow;
         volunteer.Status = "Pending";
+        _context.Notifications.Add(new Notification { UserId = volunteer.UserId, Email = volunteer.Email, Subject = "Volunteer application received", Body = "Your application is pending review. Our team will contact you after a decision." });
         _context.Volunteers.Add(volunteer);
         await _context.SaveChangesAsync();
 
@@ -121,8 +122,14 @@ public class VolunteerFunctions
             return req.CreateResponse(HttpStatusCode.BadRequest);
         if (statusUpdate != null)
         {
-            volunteer.Status = statusUpdate.Status;
-            await _context.SaveChangesAsync();
+            if (volunteer.Status != statusUpdate.Status)
+            {
+                var previous = volunteer.Status;
+                volunteer.Status = statusUpdate.Status;
+                _context.Notifications.Add(new Notification { UserId = volunteer.UserId, Email = volunteer.Email, Subject = $"Volunteer application: {volunteer.Status}", Body = $"Your application status is now {volunteer.Status}. Contact the support team if you need help with next steps." });
+                _context.StaffAuditEntries.Add(new StaffAuditEntry { ActorName = "Trusted API", Action = "Status changed", EntityType = "Volunteer", EntityId = id, Summary = $"Application changed from {previous} to {volunteer.Status}." });
+                await _context.SaveChangesAsync();
+            }
         }
 
         var response = req.CreateResponse(HttpStatusCode.OK);
@@ -147,6 +154,7 @@ public class VolunteerFunctions
             return req.CreateResponse(HttpStatusCode.NotFound);
         }
 
+        _context.StaffAuditEntries.Add(new StaffAuditEntry { ActorName = "Trusted API", Action = "Deleted", EntityType = "Volunteer", EntityId = id, Summary = "Deleted volunteer application through trusted API." });
         _context.Volunteers.Remove(volunteer);
         await _context.SaveChangesAsync();
 

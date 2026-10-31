@@ -9,6 +9,9 @@ namespace GiftOfTheGivers.Helpers.Models;
 public class Donation
 {
     public int Id { get; set; }
+    public int? ReliefProjectId { get; set; }
+    public ReliefProject? ReliefProject { get; set; }
+    public Guid? SubmissionKey { get; set; }
 
     [Required(ErrorMessage = "Please enter your name.")]
     [StringLength(100)]

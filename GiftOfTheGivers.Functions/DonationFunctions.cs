@@ -100,7 +100,7 @@ public class DonationFunctions
         var donation = await req.ReadFromJsonAsync<Donation>();
 
         // If the request did not contain valid donation data, return: 400 Bad Request
-        if (donation == null || !Validator.TryValidateObject(donation, new ValidationContext(donation), new List<ValidationResult>(), true))
+        if (donation == null || donation.Email.Length > 254 || !Validator.TryValidateObject(donation, new ValidationContext(donation), new List<ValidationResult>(), true))
         {
             return req.CreateResponse(HttpStatusCode.BadRequest);
         }
@@ -111,6 +111,9 @@ public class DonationFunctions
         }
 
         // Add the new donation to the database.
+        if (donation.ReliefProjectId != null && !await _context.ReliefProjects.AnyAsync(p => p.Id == donation.ReliefProjectId && p.IsActive))
+            return req.CreateResponse(HttpStatusCode.BadRequest);
+        donation.ReliefProject = null;
         donation.Id = 0;
         donation.DonationDate = DateTime.UtcNow;
         _context.Donations.Add(donation);
@@ -119,6 +122,7 @@ public class DonationFunctions
         // Use the shared TaxCertificateHelper (from the Class Library)
         // to assign a formal SARS Section 18A tax certificate number.
         donation.ReferenceNumber = TaxCertificateHelper.FormatCertificateNumber(donation.Id, donation.DonationDate);
+        _context.Notifications.Add(new Notification { UserId = donation.DonorId, Email = donation.Email, Subject = "Your demo donation was recorded", Body = "Your demo contribution has been recorded. No payment was processed. This is not a tax receipt." });
         await _context.SaveChangesAsync();
 
         // Create a response with: 201 Created
@@ -153,7 +157,7 @@ public class DonationFunctions
             : donation.ReferenceNumber;
 
         var taxRelief = TaxCertificateHelper.CalculateTaxRelief(donation.Amount);
-        var formattedAmount = DonationMetricsHelper.FormatZar(donation.Amount);
+        var formattedAmount = $"{donation.Currency} {donation.Amount:N2}";
         var tier = DonationMetricsHelper.GetDonationTier(donation.Amount);
         var verificationHash = TaxCertificateHelper.GenerateVerificationHash(certNumber, donation.Amount, donation.Email);
 
@@ -205,6 +209,7 @@ public class DonationFunctions
         }
 
         // Tell Entity Framework to remove the donation from the database.
+        _context.StaffAuditEntries.Add(new StaffAuditEntry { ActorName = "Trusted API", Action = "Deleted", EntityType = "Donation", EntityId = id, Summary = $"Deleted demo record {donation.ReferenceNumber}." });
         _context.Donations.Remove(donation);
 
         // Execute the DELETE operation against the database.

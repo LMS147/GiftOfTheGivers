@@ -1,207 +1,145 @@
 using System.Security.Claims;
+using GiftOfTheGivers.Helpers.Data;
+using GiftOfTheGivers.Helpers.Models;
+using GiftOfTheGivers.Helpers.Models.ViewModels;
+using GiftOfTheGivers.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using GiftOfTheGivers.Helpers.Data;
-using GiftOfTheGivers.Helpers;
-using GiftOfTheGivers.Helpers.Models;
-
 namespace GiftOfTheGivers.Controllers;
 
-/// <summary>
-/// Donations controller: handles donation submissions, Section 18A tax certificate
-/// generation via Azure Functions (Section A), and donor metrics calculation
-/// via the GiftOfTheGivers.Helpers library (Section D).
-/// </summary>
-public class DonationsController : Controller
+public class DonationsController(ApplicationDbContext db, SubmissionAccessService access, DonationReviewService reviews, ExperienceService experience, ITaxCertificateService certificates) : Controller
 {
-    private readonly SubmissionAccessService _access;
-    private readonly HttpClient _httpClient;
-    private readonly ApplicationDbContext _db;
-    private readonly ITaxCertificateService _taxCertService;
-    private readonly ILogger<DonationsController> _logger;
-
-    public DonationsController(
-        IHttpClientFactory httpClientFactory,
-        SubmissionAccessService access,
-        ApplicationDbContext db,
-        ITaxCertificateService taxCertService,
-        ILogger<DonationsController> logger)
-    {
-        _access = access;
-        _httpClient = httpClientFactory.CreateClient("GiftOfTheGiversFunctions");
-        _db = db;
-        _taxCertService = taxCertService;
-        _logger = logger;
-    }
-
-    // ============================================================
-    // GET: Donations (Read all donations via Azure Function)
-    // ============================================================
+    private string Owner => User.FindFirstValue(ClaimTypes.NameIdentifier) ?? "guest";
     [Authorize(Roles = "Staff")]
-    public async Task<IActionResult> Index()
-    {
-        if (_httpClient.BaseAddress != null) try
-        {
-            // Call Azure Function: GET /api/donations
-            var donations = await _httpClient.GetFromJsonAsync<List<Donation>>("api/donations");
-            if (donations != null) return View(donations);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogWarning(ex, "Azure Function offline — falling back to direct database context.");
-        }
+    public IActionResult Index() => RedirectToAction("Donations", "Staff", new { area = "Staff" });
 
-        // Direct DB fallback (from Class Library)
-        var list = await _db.Donations.OrderByDescending(d => d.DonationDate).ToListAsync();
-        return View(list);
-    }
-
-    // ============================================================
-    // GET: Donations/Details/5 (Read one donation via Azure Function)
-    // ============================================================
     [Authorize(Roles = "Staff")]
     public async Task<IActionResult> Details(int? id)
     {
-        if (id == null) return NotFound();
-
-        if (_httpClient.BaseAddress != null) try
-        {
-            var response = await _httpClient.GetAsync($"api/donations/{id}");
-            if (response.IsSuccessStatusCode)
-            {
-                var donation = await response.Content.ReadFromJsonAsync<Donation>();
-                return View(donation);
-            }
-        }
-        catch (Exception ex)
-        {
-            _logger.LogWarning(ex, "Azure Function offline — falling back to direct database context.");
-        }
-
-        var localDonation = await _db.Donations.FindAsync(id);
-        if (localDonation == null) return NotFound();
-        return View(localDonation);
+        var item = await db.Donations.Include(d => d.ReliefProject).FirstOrDefaultAsync(d => d.Id == id);
+        return item == null ? NotFound() : View(item);
     }
-
-    // ============================================================
-    // GET: Donations/Create
-    // ============================================================
     [AllowAnonymous]
-    public IActionResult Create() => View(new Donation());
-
-    // ============================================================
-    // POST: Donations/Create (single database write path)
-    // ============================================================
-    [HttpPost]
-    [ValidateAntiForgeryToken]
-    [AllowAnonymous]
-    public async Task<IActionResult> Create([Bind("DonorName,Email,Amount,Currency,IsRecurring")] Donation donation)
+    public async Task<IActionResult> Create(int? projectId)
     {
-        if (ModelState.IsValid)
-        {
-            donation.DonationDate = DateTime.Now;
-            donation.DonorId = User.Identity?.IsAuthenticated == true
-                ? User.FindFirstValue(ClaimTypes.NameIdentifier)
-                : null;
-
-            _db.Donations.Add(donation);
-            await _db.SaveChangesAsync();
-            donation.ReferenceNumber = TaxCertificateHelper.FormatCertificateNumber(donation.Id, donation.DonationDate);
-            await _db.SaveChangesAsync();
-            var createdId = donation.Id;
-            _access.Grant(HttpContext, "donation", createdId);
-
-            return RedirectToAction(nameof(Certificate), new { id = createdId });
-        }
-
-        return View(donation);
+        await ProjectChoicesAsync();
+        if (projectId != null && !await db.ReliefProjects.AnyAsync(p => p.Id == projectId && p.IsActive))
+            return NotFound();
+        return View(new DonationInput { ReliefProjectId = projectId });
     }
+    private async Task ProjectChoicesAsync() => ViewBag.Projects = await db.ReliefProjects.AsNoTracking().Where(p => p.IsActive).OrderBy(p => p.Name).ToListAsync();
 
-    // ============================================================
-    // GET: Donations/Certificate/5 (Section 18A Tax Certificate)
-    // ============================================================
+    [HttpPost, ValidateAntiForgeryToken, AllowAnonymous]
+    public async Task<IActionResult> Review(DonationInput input)
+    {
+        if (input.SubmissionKey == Guid.Empty) ModelState.AddModelError("", "Please reload the donation form.");
+        var project = input.ReliefProjectId == null ? null : await db.ReliefProjects.FindAsync(input.ReliefProjectId);
+        if (input.ReliefProjectId != null && (project == null || !project.IsActive))
+            ModelState.AddModelError(nameof(input.ReliefProjectId), "Choose an active project.");
+        if (!ModelState.IsValid) { await ProjectChoicesAsync(); return View("Create", input); }
+        return View(new DonationReviewViewModel { Donation = input, ProjectName = project?.Name ?? "General relief fund", ReviewToken = reviews.Protect(input, Owner) });
+    }
+    [HttpPost, ValidateAntiForgeryToken, AllowAnonymous]
+    public async Task<IActionResult> Create(string reviewToken)
+    {
+        var input = reviews.Read(reviewToken, Owner);
+        if (input == null)
+        {
+            TempData["Error"] = "Your review expired or changed. Please enter your donation details again.";
+            return RedirectToAction(nameof(Create));
+        }
+        var existing = await db.Donations.FirstOrDefaultAsync(d => d.SubmissionKey == input.SubmissionKey);
+        if (existing != null) return Confirmation(existing);
+        if (input.ReliefProjectId != null && !await db.ReliefProjects.AnyAsync(p => p.Id == input.ReliefProjectId && p.IsActive))
+        {
+            TempData["Error"] = "That project has closed. Please choose another project.";
+            return RedirectToAction(nameof(Create));
+        }
+        var donation = new Donation
+        {
+            DonorName = input.DonorName, Email = input.Email, Amount = input.Amount, Currency = input.Currency,
+            IsRecurring = input.IsRecurring, ReliefProjectId = input.ReliefProjectId, SubmissionKey = input.SubmissionKey,
+            DonationDate = DateTime.UtcNow, DonorId = User.FindFirstValue(ClaimTypes.NameIdentifier)
+        };
+        db.Donations.Add(donation);
+        experience.Notify(donation.DonorId, donation.Email, "Your demo donation was recorded",
+            $"Thank you, {donation.DonorName}. Your demo record for {donation.Currency} {donation.Amount:N2} has been saved. No payment was processed. This is not a tax receipt.");
+        try { await db.SaveChangesAsync(); }
+        catch (DbUpdateException)
+        {
+            // A unique submission key makes a replay of the same reviewed form safe.
+            db.ChangeTracker.Clear();
+            existing = await db.Donations.FirstOrDefaultAsync(d => d.SubmissionKey == input.SubmissionKey);
+            if (existing == null) throw;
+            return Confirmation(existing);
+        }
+        donation.ReferenceNumber = TaxCertificateHelper.FormatCertificateNumber(donation.Id, donation.DonationDate);
+        await db.SaveChangesAsync();
+        return Confirmation(donation);
+    }
+    private IActionResult Confirmation(Donation donation)
+    {
+        if ((donation.DonorId ?? "guest") != Owner) return NotFound();
+        access.Grant(HttpContext, "donation", donation.Id);
+        return RedirectToAction(nameof(Certificate), new { id = donation.Id });
+    }
+    private Task<Donation?> ReadableAsync(int id) => db.Donations.Include(d => d.ReliefProject).FirstOrDefaultAsync(d => d.Id == id);
+
     [AllowAnonymous]
     public async Task<IActionResult> Certificate(int id)
     {
-        var donation = await _db.Donations.FindAsync(id);
-        if (donation == null || !_access.CanRead(HttpContext, "donation", id, donation.DonorId)) return NotFound();
+        var item = await ReadableAsync(id);
+        if (item == null || !access.CanRead(HttpContext, "donation", id, item.DonorId)) return NotFound();
         Response.Headers.CacheControl = "no-store";
-
-        // Invoke tax certificate generation service
-        var certResult = await _taxCertService.GenerateTaxCertificateAsync(donation);
-
-        ViewBag.TaxCertificate = certResult;
-        ViewBag.FormattedAmount = $"{donation.Currency} {donation.Amount:N2}";
-        ViewBag.TaxRelief = DonationMetricsHelper.FormatZar(TaxCertificateHelper.CalculateTaxRelief(donation.Amount));
-        ViewBag.DonorTier = DonationMetricsHelper.GetDonationTier(donation.Amount);
-        ViewBag.PboDetails = TaxCertificateHelper.GetPboRegistrationDetails();
-
-        return View(donation);
+        ViewBag.TaxCertificate = await certificates.GenerateTaxCertificateAsync(item);
+        return View(item);
     }
-
-    [HttpGet]
-    [AllowAnonymous]
+    [HttpGet, AllowAnonymous]
     public async Task<IActionResult> CloudCertificate(int id)
     {
-        var donation = await _db.Donations.FindAsync(id);
-        if (donation == null || !_access.CanRead(HttpContext, "donation", id, donation.DonorId)) return NotFound();
+        var item = await ReadableAsync(id);
+        if (item == null || !access.CanRead(HttpContext, "donation", id, item.DonorId)) return NotFound();
         Response.Headers.CacheControl = "no-store";
-        return Json(await _taxCertService.GenerateTaxCertificateAsync(donation));
+        return Json(await certificates.GenerateTaxCertificateAsync(item));
     }
-
-    // ============================================================
-    // GET: Donations/Delete/5
-    // ============================================================
+    [HttpGet, AllowAnonymous]
+    public async Task<IActionResult> Download(int id)
+    {
+        var item = await ReadableAsync(id);
+        if (item == null || !access.CanRead(HttpContext, "donation", id, item.DonorId)) return NotFound();
+        Response.Headers.CacheControl = "no-store";
+        return File(ReceiptPdfService.Generate(item), "application/pdf", $"demo-receipt-{id}.pdf");
+    }
     [Authorize(Roles = "Staff")]
     public async Task<IActionResult> Delete(int? id)
     {
-        if (id == null) return NotFound();
-        var donation = await _db.Donations.FindAsync(id);
-        if (donation == null) return NotFound();
-        return View(donation);
+        var item = await db.Donations.FindAsync(id);
+        return item == null ? NotFound() : View(item);
     }
-
-    // ============================================================
-    // POST: Donations/Delete/5
-    // ============================================================
-    [HttpPost, ActionName("Delete")]
-    [ValidateAntiForgeryToken]
-    [Authorize(Roles = "Staff")]
+    [HttpPost, ActionName("Delete"), ValidateAntiForgeryToken, Authorize(Roles = "Staff")]
     public async Task<IActionResult> DeleteConfirmed(int id)
     {
-        var donation = await _db.Donations.FindAsync(id);
-        if (donation == null) return NotFound();
-        _db.Donations.Remove(donation);
-        await _db.SaveChangesAsync();
-
+        var item = await db.Donations.FindAsync(id);
+        if (item == null) return NotFound();
+        experience.Audit(User, "Deleted", "Donation", id, $"Deleted demo record {item.ReferenceNumber}.");
+        db.Donations.Remove(item); await db.SaveChangesAsync();
+        TempData["Flash"] = "Demo record deleted.";
         return RedirectToAction(nameof(Index));
     }
-
-    // ============================================================
-    // GET: MyDonations (Donor giving history with Class Library metrics)
-    // ============================================================
     [Authorize]
-    public async Task<IActionResult> MyDonations()
+    public async Task<IActionResult> MyDonations(int page = 1, string? currency = null)
     {
-        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-        var donations = await _db.Donations
-            .Where(d => d.DonorId == userId)
-            .OrderByDescending(d => d.DonationDate)
-            .ToListAsync();
-
-        var amounts = donations.Where(d => d.Currency == "ZAR").Select(d => d.Amount).ToList();
-        var total = DonationMetricsHelper.CalculateTotal(amounts);
-        var average = DonationMetricsHelper.CalculateAverage(amounts);
-        var taxRelief = TaxCertificateHelper.CalculateTaxRelief(total);
-        var tier = DonationMetricsHelper.GetDonationTier(total);
-
-        ViewBag.TotalZar = DonationMetricsHelper.FormatZar(total);
-        ViewBag.AverageZar = DonationMetricsHelper.FormatZar(average);
-        ViewBag.TaxReliefTotal = DonationMetricsHelper.FormatZar(taxRelief);
-        ViewBag.DonorTier = tier;
-
-        return View(donations);
+        var id = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        var mine = db.Donations.AsNoTracking().Where(d => d.DonorId == id);
+        var summary = await mine.Select(d => new { d.Currency, d.Amount, d.IsRecurring }).ToListAsync();
+        var filtered = mine.Include(d => d.ReliefProject).AsQueryable();
+        if (!string.IsNullOrWhiteSpace(currency)) filtered = filtered.Where(d => d.Currency == currency);
+        return View(new DonorDashboardViewModel
+        {
+            Donations = await ExperienceService.PageAsync(filtered.OrderByDescending(d => d.DonationDate).ThenByDescending(d => d.Id), page),
+            Totals = summary.GroupBy(d => d.Currency).Select(g => new CurrencySummary { Currency = g.Key, Total = g.Sum(d => d.Amount), Count = g.Count() }).ToList(),
+            ContributionCount = summary.Count, RecurringCount = summary.Count(d => d.IsRecurring)
+        });
     }
 }
-

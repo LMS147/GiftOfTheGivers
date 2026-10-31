@@ -44,19 +44,19 @@ public class DbSeeder
             db.ReliefProjects.AddRange(
                 new ReliefProject
                 {
-                    Name = "KZN Flood Relief",
+                    Name = "KZN Flood Relief", Category = "Food", TargetAmount = 50000m,
                     Location = "KwaZulu-Natal",
                     Description = "Emergency food parcels, blankets and clean drinking water for communities affected by flooding."
                 },
                 new ReliefProject
                 {
-                    Name = "Winter Warmth Drive",
+                    Name = "Winter Warmth Drive", Category = "Shelter", TargetAmount = 30000m,
                     Location = "Gauteng & Free State",
                     Description = "Warm clothing, blankets and hot meals distributed through shelters during the winter months."
                 },
                 new ReliefProject
                 {
-                    Name = "Eastern Cape Drought Support",
+                    Name = "Eastern Cape Drought Support", Category = "Water", TargetAmount = 40000m,
                     Location = "Eastern Cape",
                     Description = "Water tanks, borehole repairs and fodder for farming communities facing drought."
                 });

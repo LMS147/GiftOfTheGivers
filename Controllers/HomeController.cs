@@ -10,16 +10,18 @@ namespace GiftOfTheGivers.Controllers;
 public class HomeController : Controller
 {
     private readonly HttpClient _httpClient;
+    private readonly ExperienceService _experience;
     private readonly ApplicationDbContext _db;
     private readonly ILogger<HomeController> _logger;
 
     public HomeController(
         IHttpClientFactory httpClientFactory,
         ApplicationDbContext db,
-        ILogger<HomeController> logger)
+        ILogger<HomeController> logger, ExperienceService experience)
     {
         _httpClient = httpClientFactory.CreateClient("GiftOfTheGiversFunctions");
         _db = db;
+        _experience = experience;
         _logger = logger;
     }
 
@@ -31,6 +33,7 @@ public class HomeController : Controller
             var summary = await _httpClient.GetFromJsonAsync<HomeViewModel>("api/home/summary");
             if (summary != null)
             {
+                summary.Projects = (await _experience.ProjectCardsAsync()).Take(3).ToList();
                 return View(summary);
             }
         }
@@ -58,6 +61,7 @@ public class HomeController : Controller
             ProjectCount = await _db.ReliefProjects.CountAsync(),
         };
 
+        fallbackVm.Projects = (await _experience.ProjectCardsAsync()).Take(3).ToList();
         return View(fallbackVm);
     }
 

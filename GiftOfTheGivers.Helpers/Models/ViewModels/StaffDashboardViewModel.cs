@@ -3,6 +3,8 @@ namespace GiftOfTheGivers.Helpers.Models.ViewModels;
 /// <summary>Data for the Staff dashboard overview page.</summary>
 public class StaffDashboardViewModel
 {
+    public int PendingVolunteerCount { get; set; }
+    public int ActiveProjectCount { get; set; }
     public int VolunteerCount { get; set; }
     public int DonationCount { get; set; }
     public int UpdateCount { get; set; }

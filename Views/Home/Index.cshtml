@@ -38,8 +38,8 @@
                         <div class="hv-icon"><i class="bi bi-heart-fill"></i></div>
                         <div>
                             <div class="hv-amount">R 2 500.00</div>
-                            <div class="hv-label">Monthly donation received</div>
-                            <div class="hv-sub"><i class="bi bi-patch-check-fill"></i> Tax certificate issued</div>
+                            <div class="hv-label">Monthly preference recorded</div>
+                            <div class="hv-sub"><i class="bi bi-patch-check-fill"></i> Demo receipt available</div>
                         </div>
                     </div>
                     <div class="hv-card hv-card-2">
@@ -63,8 +63,8 @@
             <div class="card stat-card h-100">
                 <div class="card-body">
                     <div class="stat-icon"><i class="bi bi-heart"></i></div>
-                    <div class="stat-value"><span data-count="@Model.DonationCount">0</span></div>
-                    <div class="stat-label">donations received</div>
+                    <div class="stat-value"><span data-count="@Model.DonationCount">@Model.DonationCount</span></div>
+                    <div class="stat-label">demo contributions</div>
                 </div>
             </div>
         </div>
@@ -72,8 +72,8 @@
             <div class="card stat-card h-100">
                 <div class="card-body">
                     <div class="stat-icon"><i class="bi bi-cash-coin"></i></div>
-                    <div class="stat-value"><span class="me-1">R</span><span data-count="@Model.TotalDonatedZar" data-decimals="0">0</span></div>
-                    <div class="stat-label">raised (ZAR)</div>
+                    <div class="stat-value"><span class="me-1">R</span><span data-count="@Model.TotalDonatedZar" data-decimals="0">@Model.TotalDonatedZar</span></div>
+                    <div class="stat-label">recorded (ZAR, demo)</div>
                 </div>
             </div>
         </div>
@@ -81,7 +81,7 @@
             <div class="card stat-card h-100">
                 <div class="card-body">
                     <div class="stat-icon"><i class="bi bi-people"></i></div>
-                    <div class="stat-value"><span data-count="@Model.VolunteerCount">0</span></div>
+                    <div class="stat-value"><span data-count="@Model.VolunteerCount">@Model.VolunteerCount</span></div>
                     <div class="stat-label">volunteers signed up</div>
                 </div>
             </div>
@@ -90,13 +90,17 @@
             <div class="card stat-card h-100">
                 <div class="card-body">
                     <div class="stat-icon"><i class="bi bi-box-seam"></i></div>
-                    <div class="stat-value"><span data-count="@Model.ProjectCount">0</span></div>
+                    <div class="stat-value"><span data-count="@Model.ProjectCount">@Model.ProjectCount</span></div>
                     <div class="stat-label">active relief projects</div>
                 </div>
             </div>
         </div>
     </div>
 </section>
+
+<section class="section"><div class="container"><div class="section-toolbar"><div><span class="eyebrow">Relief in action</span><h2>Find a cause that matters to you</h2><p class="text-muted">Follow project updates and choose where to record your demo support.</p></div><a class="btn btn-soft" asp-controller="Projects" asp-action="Index">All projects <i class="bi bi-arrow-right ms-2"></i></a></div>
+@if(Model.Projects.Count == 0){<div class="empty-state"><h3 class="h5">New projects are on the way</h3><p>Our team will publish relief projects here.</p></div>}else{<div class="row g-4">@foreach(var project in Model.Projects){<div class="col-md-6 col-lg-4"><partial name="_ProjectCard" model="project" /></div>}</div>}
+<p class="small text-muted mt-3">Student demonstration · Project progress reflects demo records, not collected funds.</p></div></section>
 
 <!-- ===================== HOW YOU CAN HELP ===================== -->
 <section class="section">

@@ -1,0 +1,21 @@
+@model GiftOfTheGivers.Helpers.Models.ViewModels.PaginationModel
+@if (Model.TotalPages > 1)
+{
+    <nav aria-label="Results pages" class="pagination-bar">
+        <span class="small text-muted">Page @Model.Page of @Model.TotalPages · @Model.TotalCount results</span>
+        <div class="d-flex gap-2">
+        @foreach (var target in new[] { Model.Page - 1, Model.Page + 1 })
+        {
+            var disabled = target < 1 || target > Model.TotalPages;
+            var label = target < Model.Page ? "Previous" : "Next";
+            if (disabled) { <span class="btn btn-soft disabled" aria-disabled="true">@label</span> }
+            else
+            {
+                <a class="btn btn-soft" asp-route-page="@target" asp-route-q="@Context.Request.Query["q"]" asp-route-status="@Context.Request.Query["status"]"
+                   asp-route-category="@Context.Request.Query["category"]" asp-route-currency="@Context.Request.Query["currency"]"
+                   asp-route-from="@Context.Request.Query["from"]" asp-route-to="@Context.Request.Query["to"]">@label</a>
+            }
+        }
+        </div>
+    </nav>
+}

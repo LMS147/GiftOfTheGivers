@@ -1,0 +1,15 @@
+@model GiftOfTheGivers.Helpers.Models.ViewModels.PagedResult<GiftOfTheGivers.Helpers.Models.ViewModels.ProjectCard>
+@{ ViewData["Title"] = "Relief projects"; ViewData["ActivePage"] = "Projects"; }
+<section class="page-heading"><div class="container"><span class="eyebrow">A place to make a difference</span><h1>Find a cause to support</h1><p>Explore relief projects and follow updates from the field.</p></div></section>
+<div class="container py-5">
+    <form method="get" class="filter-bar mb-4" role="search">
+        <div class="flex-grow-1"><label for="project-search" class="form-label">Search projects</label><input class="form-control" id="project-search" name="q" value="@Context.Request.Query["q"]" placeholder="Project or location" /></div>
+        <div><label for="category" class="form-label">Category</label><select id="category" name="category" class="form-select"><option value="">All categories</option>@foreach(var category in new[]{"Food","Water","Medical","Shelter","Education","Other"}){<option value="@category" selected="@(Context.Request.Query["category"] == category)">@category</option>}</select></div>
+        <div><label for="status" class="form-label">Status</label><select id="status" name="status" class="form-select"><option value="active">Active</option><option value="closed" selected="@(Context.Request.Query["status"] == "closed")">Closed</option></select></div>
+        <button class="btn btn-gotg" type="submit">Find projects</button><a asp-action="Index" class="btn btn-soft">Reset</a>
+    </form>
+    <p class="small text-muted">This student prototype records demo contributions. No real funds are collected.</p>
+    @if (Model.Items.Count == 0) { <div class="empty-state"><i class="bi bi-search" aria-hidden="true"></i><h2 class="h5">No projects found</h2><p>Try a different category or search term.</p><a asp-action="Index" class="btn btn-soft">Clear filters</a></div> }
+    else { <div class="row g-4">@foreach(var card in Model.Items){<div class="col-md-6 col-lg-4"><partial name="_ProjectCard" model="card" /></div>}</div> }
+    <partial name="_Pagination" model="Model" />
+</div>

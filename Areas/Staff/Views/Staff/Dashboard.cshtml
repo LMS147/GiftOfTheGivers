@@ -29,6 +29,7 @@
     </div>
 }
 
+<div class="row g-3 mb-4"><div class="col-md-7"><a class="action-card" asp-action="Volunteers" asp-route-status="Pending"><span class="action-card-icon"><i class="bi bi-person-check" aria-hidden="true"></i></span><div><span class="eyebrow">Needs your attention</span><h2 class="h4 mb-1">@Model.PendingVolunteerCount applications awaiting review</h2><p class="mb-0">Review availability and share the next step with volunteers.</p></div><i class="bi bi-arrow-right ms-auto" aria-hidden="true"></i></a></div><div class="col-md-5"><a class="action-card h-100" asp-area="Staff" asp-controller="Projects" asp-action="Index"><div><span class="eyebrow">Relief operations</span><h2 class="h4 mb-1">@Model.ActiveProjectCount active projects</h2><p class="mb-0">Manage goals and close completed projects.</p></div><i class="bi bi-arrow-right ms-auto" aria-hidden="true"></i></a></div></div>
 <!-- Stats -->
 <div class="row g-3 mb-4">
     <div class="col-6 col-lg-3">
@@ -45,7 +46,7 @@
             <div class="card-body">
                 <div class="stat-icon"><i class="bi bi-heart"></i></div>
                 <div class="stat-value">@Model.DonationCount</div>
-                <div class="stat-label">donations received</div>
+                <div class="stat-label">demo contributions</div>
             </div>
         </div>
     </div>
@@ -54,7 +55,7 @@
             <div class="card-body">
                 <div class="stat-icon"><i class="bi bi-cash-coin"></i></div>
                 <div class="stat-value">R @Model.TotalRaisedZar.ToString("N0")</div>
-                <div class="stat-label">raised in ZAR</div>
+                <div class="stat-label">recorded in ZAR (demo)</div>
             </div>
         </div>
     </div>

@@ -25,7 +25,8 @@ public class HomeFunctions
         ReliefProject = u.ReliefProject == null ? null : new ReliefProject
         {
             Id = u.ReliefProject.Id, Name = u.ReliefProject.Name,
-            Description = u.ReliefProject.Description, Location = u.ReliefProject.Location
+            Description = u.ReliefProject.Description, Location = u.ReliefProject.Location,
+            Category = u.ReliefProject.Category, TargetAmount = u.ReliefProject.TargetAmount, IsActive = u.ReliefProject.IsActive, ImageUrl = u.ReliefProject.ImageUrl
         }
     };
 
@@ -91,7 +92,7 @@ public class HomeFunctions
             .OrderBy(p => p.Name)
             .Select(p => new
             {
-                p.Id, p.Name, p.Location, p.Description,
+                p.Id, p.Name, p.Location, p.Description, p.Category, p.TargetAmount, p.IsActive, p.ImageUrl,
                 Updates = p.Updates.Select(u => new
                 {
                     u.Id, u.ReliefProjectId, u.Title, u.Body, u.PostedAt, u.PostedByName

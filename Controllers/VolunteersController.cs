@@ -22,14 +22,16 @@ public class VolunteersController : Controller
     public static readonly string[] AvailabilityOptions = { "Weekdays", "Weekends", "Full-time", "On-call" };
 
     private readonly SubmissionAccessService _access;
+    private readonly ExperienceService _experience;
     private readonly ApplicationDbContext _db;
 
     public VolunteersController(
         SubmissionAccessService access,
-        ApplicationDbContext db)
+        ApplicationDbContext db, ExperienceService experience)
     {
         _access = access;
         _db = db;
+        _experience = experience;
     }
 
     // ============================================================
@@ -54,6 +56,7 @@ public class VolunteersController : Controller
         if (selectedSkills is { Length: > 0 })
             volunteer.Skills = string.Join(", ", selectedSkills);
 
+        if (volunteer.Email.Length > 254) ModelState.AddModelError(nameof(volunteer.Email), "Email address must be at most 254 characters.");
         if (!ModelState.IsValid)
         {
             ViewData["Skills"] = Skills;
@@ -69,6 +72,8 @@ public class VolunteersController : Controller
 
         volunteer.Status = "Pending";
         _db.Volunteers.Add(volunteer);
+        _experience.Notify(volunteer.UserId, volunteer.Email, "Volunteer application received",
+            $"Hello {volunteer.FullName}. Your volunteer application is pending review. Our team will contact you after a decision. You do not need to apply again.");
         await _db.SaveChangesAsync();
         var createdId = volunteer.Id;
         _access.Grant(HttpContext, "volunteer", createdId);

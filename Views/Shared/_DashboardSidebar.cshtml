@@ -17,6 +17,7 @@
         @if (isStaff)
         {
             <div class="dash-nav-section">Manage</div>
+            <a class="@(active=="projects"?"active":"")" asp-area="Staff" asp-controller="Projects" asp-action="Index"><i class="bi bi-box-seam"></i> Relief projects</a>
             <a class="@(active == "overview" ? "active" : "")" asp-area="Staff" asp-controller="Staff" asp-action="Dashboard">
                 <i class="bi bi-speedometer2"></i> Overview
             </a>
@@ -29,6 +30,8 @@
             <a class="@(active == "donations" ? "active" : "")" asp-area="Staff" asp-controller="Staff" asp-action="Donations">
                 <i class="bi bi-heart"></i> Donations
             </a>
+            <a class="@(active=="audit"?"active":"")" asp-area="Staff" asp-controller="Staff" asp-action="Audit"><i class="bi bi-clock-history"></i> Audit history</a>
+            <a class="@(active=="diagnostics"?"active":"")" asp-area="Staff" asp-controller="Staff" asp-action="Diagnostics"><i class="bi bi-activity"></i> Service diagnostics</a>
         }
         else
         {

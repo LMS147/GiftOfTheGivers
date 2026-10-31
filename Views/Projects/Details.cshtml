@@ -1,0 +1,12 @@
+@model GiftOfTheGivers.Helpers.Models.ViewModels.ProjectDetailsViewModel
+@{ ViewData["Title"] = Model.Card.Project.Name; ViewData["ActivePage"] = "Projects"; }
+<div class="container py-5">
+    <a asp-action="Index" class="back-link"><i class="bi bi-arrow-left me-2" aria-hidden="true"></i>All projects</a>
+    <div class="row gx-lg-5 gy-4 mt-1"><div class="col-lg-7"><img src="@Model.Card.Image" class="project-detail-image mb-4" alt="Illustration for @Model.Card.Project.Name" /><span class="badge badge-soft">@Model.Card.Project.Category</span><h1 class="mt-3">@Model.Card.Project.Name</h1><p class="text-muted">@Model.Card.Project.Location</p><p class="project-full-description">@Model.Card.Project.Description</p></div>
+    <div class="col-lg-5"><aside class="card feature-card p-4 sticky-lg-top project-support"><h2 class="h4">Support this project</h2><p class="small text-muted">@(Model.Card.Project.IsActive ? "This project is accepting demo contributions." : "This project is closed. Its updates remain available below.")</p>
+    @if(Model.Card.Project.TargetAmount > 0){<div class="display-6 fw-bold">ZAR @Model.Card.RecordedZar.ToString("N2")</div><p>of @Model.Card.Project.TargetAmount.ToString("N2") demo target</p><div class="progress project-progress mb-3"><div class="progress-bar" style="width:@(Model.Card.Progress)%"></div></div>}
+    <p class="demo-note">Demo only · No payment will be processed.</p>
+    @if(Model.Card.Project.IsActive){<a class="btn btn-gotg btn-lg" asp-controller="Donations" asp-action="Create" asp-route-projectId="@Model.Card.Project.Id">Record a demo contribution</a>}
+    else{<a class="btn btn-soft" asp-action="Index">Explore active projects</a>}</aside></div></div>
+    <section class="mt-5"><h2 class="h3">From the field</h2>@if(Model.Updates.Count == 0){<p class="text-muted">Updates will appear here as work progresses.</p>}@foreach(var update in Model.Updates){<article class="card p-4 mt-3"><p class="small text-muted">@update.PostedAt.ToString("dd MMM yyyy")</p><h3 class="h5">@update.Title</h3><p class="mb-0">@update.Body</p></article>}</section>
+</div>
