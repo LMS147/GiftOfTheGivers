@@ -888,3 +888,5 @@ footer.footer .f-item i { color: var(--brand-400); margin-top: .15rem; }
 @media(max-width:767px){.page-heading{padding:40px 0 32px}.filter-bar>div,.filter-bar .flex-grow-1{min-width:0;width:100%}.filter-bar>.btn{flex:1}.section-toolbar{align-items:flex-start}.donation-steps{gap:12px;font-size:.75rem}.donation-steps span{width:24px;height:24px}.review-details>div{display:block}.review-details dd{max-width:100%;text-align:left;margin-top:4px}.action-card{padding:20px;gap:12px}.action-card-icon{display:none}.dash-topbar{padding-inline:16px}.dash-title{font-size:1rem}.project-image{height:190px}.table td,.table th{padding:14px}.notification-bell{margin-right:4px}}
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important;scroll-behavior:auto!important}.project-card:hover{transform:none}}
 @media print{body{background:#fff!important}.print-hide,header,footer,.back-to-top,.skip-link{display:none!important}.receipt-card{box-shadow:none!important;border:1px solid #bbb!important;break-inside:avoid}.container{max-width:100%!important}}
+
+@media(min-width:992px){.project-support{top:100px}}

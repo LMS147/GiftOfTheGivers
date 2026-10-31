@@ -39,7 +39,7 @@ public class DonationInput
 {
     [Required, StringLength(100), Display(Name = "Full name")] public string DonorName { get; set; } = "";
     [Required, EmailAddress, StringLength(254), Display(Name = "Email address")] public string Email { get; set; } = "";
-    [Range(typeof(decimal), "1", "1000000")] public decimal Amount { get; set; }
+    [Range(typeof(decimal), "1", "1000000")] public decimal Amount { get; set; } = 250m;
     [Required, RegularExpression("^(ZAR|USD|EUR)$")] public string Currency { get; set; } = "ZAR";
     public bool IsRecurring { get; set; }
     [Display(Name = "Relief project")] public int? ReliefProjectId { get; set; }

@@ -1,3 +1,5 @@
+using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using System.Reflection;
 using GiftOfTheGivers.Functions;
 using GiftOfTheGivers.Helpers.Data;
@@ -56,6 +58,18 @@ public class FunctionTests
         using var db = new ApplicationDbContext(new DbContextOptionsBuilder<ApplicationDbContext>()
             .UseSqlServer("Server=localhost;Database=unused;Trusted_Connection=True;TrustServerCertificate=True").Options);
         Assert.False(db.Database.HasPendingModelChanges());
+    }
+
+    [Fact]
+    public void UpgradeMigrationGeneratesSqlForNotificationsAndProjectMetadata()
+    {
+        using var db = new ApplicationDbContext(new DbContextOptionsBuilder<ApplicationDbContext>()
+            .UseSqlServer("Server=localhost;Database=unused;Trusted_Connection=True;TrustServerCertificate=True").Options);
+        var sql = db.GetService<IMigrator>().GenerateScript("20260831091321_InitialCreate", "20261031090000_ExperienceUpgrade");
+        Assert.Contains("CREATE TABLE [Notifications]", sql);
+        Assert.Contains("CREATE TABLE [StaffAuditEntries]", sql);
+        Assert.Contains("IX_Donations_SubmissionKey", sql);
+        Assert.Contains("ON DELETE SET NULL", sql);
     }
 
     private static ApplicationDbContext Database() => new(new DbContextOptionsBuilder<ApplicationDbContext>()

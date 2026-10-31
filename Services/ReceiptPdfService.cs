@@ -21,7 +21,12 @@ public static class ReceiptPdfService
             "Not affiliated with the real Gift of the Givers Foundation."
         };
         var content = new StringBuilder("BT /F1 12 Tf 50 790 Td 22 TL\n");
-        foreach (var line in lines) content.Append('(').Append(Escape(line)).Append(") Tj T*\n");
+        foreach (var line in lines)
+        {
+            if (line.Length == 0) { content.Append("() Tj T*\n"); continue; }
+            for (int start = 0; start < line.Length; start += 40)
+                content.Append('(').Append(Escape(line.Substring(start, Math.Min(40, line.Length - start)))).Append(") Tj T*\n");
+        }
         content.Append("ET\n");
         var stream = content.ToString();
         var objects = new[]

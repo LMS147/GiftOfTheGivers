@@ -1,3 +1,6 @@
+using GiftOfTheGivers.Areas.Staff.Controllers;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging.Abstractions;
 using System.ComponentModel.DataAnnotations;
 using System.Security.Claims;
 using System.Text;
@@ -94,6 +97,22 @@ public class ExperienceTests
         Assert.StartsWith("xref", text[offset..]);
         Assert.Contains("A \\(test\\) \\\\ person", text);
     }
+    [Fact]
+    public async Task VolunteerDecisionQueuesOneNotificationAndOneAuditEvenWhenRepeated()
+    {
+        await using var db = Database();
+        db.Volunteers.Add(new Volunteer { Id = 1, FullName = "Test", Email = "test@example.com", Phone = "123", Availability = "Weekends", UserId = "owner" });
+        await db.SaveChangesAsync();
+        var controller = new StaffController(db, new Clients(), NullLogger<StaffController>.Instance, new ExperienceService(db), new ConfigurationBuilder().Build())
+        { ControllerContext = new ControllerContext { HttpContext = new DefaultHttpContext { User = Account("staff") } }, TempData = new Microsoft.AspNetCore.Mvc.ViewFeatures.TempDataDictionary(new DefaultHttpContext(), new MemoryTempData()) };
+        await controller.UpdateStatus(1, "Approved");
+        await controller.UpdateStatus(1, "Approved");
+        Assert.Equal("Approved", (await db.Volunteers.FindAsync(1))!.Status);
+        Assert.Single(await db.Notifications.ToListAsync());
+        Assert.Single(await db.StaffAuditEntries.ToListAsync());
+    }
+    private sealed class Clients : IHttpClientFactory { public HttpClient CreateClient(string name) => new(); }
+
     private static DonationInput ValidInput() => new() { DonorName = "Test donor", Email = "test@example.com", Amount = 100, Currency = "ZAR" };
     private static ClaimsPrincipal Account(string id) => new(new ClaimsIdentity(new[] { new Claim(ClaimTypes.NameIdentifier, id) }, "test"));
     private static ApplicationDbContext Database() => new(new DbContextOptionsBuilder<ApplicationDbContext>().UseInMemoryDatabase(Guid.NewGuid().ToString()).Options);
