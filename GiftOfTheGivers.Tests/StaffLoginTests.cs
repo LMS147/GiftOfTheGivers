@@ -25,7 +25,14 @@ public class StaffLoginTests
             services.AddIdentity<IdentityUser, IdentityRole>().AddEntityFrameworkStores<ApplicationDbContext>().AddDefaultUI().AddDefaultTokenProviders();
             services.AddScoped<StaffBootstrapper>(); services.AddScoped<ExperienceService>();
             services.AddControllersWithViews().AddApplicationPart(typeof(DonationsController).Assembly);
-            services.AddRazorPages().AddApplicationPart(typeof(DonationsController).Assembly);
+            services.AddRazorPages().AddApplicationPart(typeof(DonationsController).Assembly)
+                .ConfigureApplicationPartManager(parts =>
+                {
+                    // The app's scaffolded pages override the Identity UI library, as in production.
+                    var ownParts = parts.ApplicationParts.Where(p => p.Name == typeof(DonationsController).Assembly.GetName().Name).ToList();
+                    foreach (var part in ownParts) parts.ApplicationParts.Remove(part);
+                    foreach (var part in ownParts.AsEnumerable().Reverse()) parts.ApplicationParts.Insert(0, part);
+                });
         }).Configure(app =>
         {
             app.UseRouting(); app.UseAuthentication(); app.UseAuthorization();
@@ -37,7 +44,14 @@ public class StaffLoginTests
             var result = await scope.ServiceProvider.GetRequiredService<StaffBootstrapper>().InitializeAsync(new() { Enabled = true, Email = "staff@example.com", Password = password });
             Assert.Equal(StaffBootstrapStatus.Created, result.Status);
         }
+        using (var scope = server.Services.CreateScope())
+        {
+            var users = scope.ServiceProvider.GetRequiredService<UserManager<IdentityUser>>();
+            Assert.True(await users.IsInRoleAsync((await users.FindByEmailAsync("staff@example.com"))!, "Staff"));
+        }
         var client = server.CreateClient();
+        var loginHtml = await client.GetStringAsync("/Identity/Account/Login");
+        Assert.Contains("Welcome back", loginHtml);
         var token = await TokenAsync(client, "/Identity/Account/Login");
         var response = await client.PostAsync("/Identity/Account/Login", new FormUrlEncodedContent(new Dictionary<string,string>
         { ["__RequestVerificationToken"] = token, ["Input.Email"] = "staff@example.com", ["Input.Password"] = password }));
