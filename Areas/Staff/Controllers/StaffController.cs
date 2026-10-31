@@ -1,10 +1,10 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using GiftOfTheGivers.Data;
+using GiftOfTheGivers.Helpers.Data;
 using GiftOfTheGivers.Helpers;
-using GiftOfTheGivers.Models;
-using GiftOfTheGivers.Models.ViewModels;
+using GiftOfTheGivers.Helpers.Models;
+using GiftOfTheGivers.Helpers.Models.ViewModels;
 
 namespace GiftOfTheGivers.Areas.Staff.Controllers;
 
@@ -18,8 +18,15 @@ namespace GiftOfTheGivers.Areas.Staff.Controllers;
 public class StaffController : Controller
 {
     private readonly ApplicationDbContext _db;
+    private readonly HttpClient _functions;
+    private readonly ILogger<StaffController> _logger;
 
-    public StaffController(ApplicationDbContext db) => _db = db;
+    public StaffController(ApplicationDbContext db, IHttpClientFactory clients, ILogger<StaffController> logger)
+    {
+        _db = db;
+        _functions = clients.CreateClient("GiftOfTheGiversFunctions");
+        _logger = logger;
+    }
 
     // ---- Overview ----------------------------------------------------------
     public async Task<IActionResult> Dashboard()
@@ -86,8 +93,10 @@ public class StaffController : Controller
 
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> PostUpdate(ProjectUpdate update)
+    public async Task<IActionResult> PostUpdate([Bind("ReliefProjectId,Title,Body", Prefix = "NewUpdate")] ProjectUpdate update)
     {
+        if (!await _db.ReliefProjects.AnyAsync(p => p.Id == update.ReliefProjectId))
+            ModelState.AddModelError("NewUpdate.ReliefProjectId", "Choose an existing project.");
         if (!ModelState.IsValid)
         {
             // Redisplay with validation messages
@@ -110,6 +119,43 @@ public class StaffController : Controller
         await _db.SaveChangesAsync();
 
         TempData["Flash"] = "Update posted successfully.";
+        if (_functions.BaseAddress != null)
+        {
+            try
+            {
+                var response = await _functions.PostAsJsonAsync("api/log-update", new { updateId = update.Id });
+                response.EnsureSuccessStatusCode();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Update {Id} saved, but its cloud audit could not be stored", update.Id);
+                TempData["Flash"] = "Update saved. Cloud audit storage is unavailable; the audit still needs to be retried.";
+            }
+        }
+        return RedirectToAction(nameof(Updates));
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> RetryAudit(int id)
+    {
+        if (!await _db.ProjectUpdates.AnyAsync(u => u.Id == id)) return NotFound();
+        if (_functions.BaseAddress == null)
+        {
+            TempData["Flash"] = "Configure Azure Functions before retrying cloud audit storage.";
+            return RedirectToAction(nameof(Updates));
+        }
+        try
+        {
+            var response = await _functions.PostAsJsonAsync("api/log-update", new { updateId = id });
+            response.EnsureSuccessStatusCode();
+            TempData["Flash"] = "Cloud audit stored successfully.";
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Audit retry failed for update {Id}", id);
+            TempData["Flash"] = "Cloud audit storage is still unavailable. Try again after restoring the service.";
+        }
         return RedirectToAction(nameof(Updates));
     }
 
@@ -131,3 +177,4 @@ public class StaffController : Controller
         return View(donations);
     }
 }
+

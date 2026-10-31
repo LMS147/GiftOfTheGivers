@@ -1,19 +1,7 @@
 # GiftOfTheGivers.Helpers
 
-A custom helper library created for the **Gift of the Givers Foundation** web system.
+Shared .NET 9 library containing EF Core SQL Server models/migrations, Identity-backed data context, development seed data and donation formatting/calculation helpers.
 
-## Features
-- **TaxCertificateHelper**:
-  - `FormatCertificateNumber(int donationId, DateTime? date)` — Generates SARS compliant Section 18A certificate numbers (e.g. `GOTG-18A-2026-00042`).
-  - `CalculateTaxRelief(decimal amount, decimal rate = 0.28m)` — Computes estimated SARS income tax rebate.
-  - `GetPboRegistrationDetails()` — Official PBO and NPO registration details.
-  - `GenerateVerificationHash(certNumber, amount, email)` — Cryptographic anti-fraud validation token.
-- **DonationMetricsHelper**:
-  - `FormatZar(decimal amount)` — South African Rand currency formatting.
-  - `CalculateTotal(IEnumerable<decimal>)` — Aggregates donation totals.
-  - `CalculateAverage(IEnumerable<decimal>)` — Calculates donation averages.
-  - `GenerateDonorReference(string donorName, int id)` — Standard donor reference generation.
-  - `GetDonationTier(decimal amount)` — Donor recognition tier classification.
+Version 1.0.1. Pack with `dotnet pack -c Release`. See the root README for Azure Artifacts publishing and package-consumption commands.
 
-## Packaging & Azure Artifacts
-Packaged as `GiftOfTheGivers.Helpers.1.0.0.nupkg` and hosted on the Azure Artifacts NuGet feed.
+All receipts and calculations are for the student prototype. No payment is processed. The public checksum is not an authenticity signature, and the illustrative tax calculation is not proof of tax eligibility.

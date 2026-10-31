@@ -13,28 +13,25 @@ namespace GiftOfTheGivers.Helpers.Data;
 /// </summary>
 public class DbSeeder
 {
-    public static async Task SeedAsync(IServiceProvider services)
+    public static async Task SeedAsync(IServiceProvider services, bool includeDemoData = false)
     {
         var db = services.GetRequiredService<ApplicationDbContext>();
         var roleManager = services.GetRequiredService<RoleManager<IdentityRole>>();
         var userManager = services.GetRequiredService<UserManager<IdentityUser>>();
 
-        // --- Roles ----------------------------------------------------------
-        foreach (var roleName in new[] { "Staff", "Volunteer", "Donor" })
-        {
-            if (!await roleManager.RoleExistsAsync(roleName))
-                await roleManager.CreateAsync(new IdentityRole(roleName));
-        }
-
-        // --- Migration helper: older databases called the staff role "Employee".
-        // Rename it to "Staff" so role checks stay consistent. User links keep
-        // working because the role Id does not change.
+        // Rename the legacy role before creating any missing roles.
         var legacyRole = await roleManager.FindByNameAsync("Employee");
         if (legacyRole != null && !await roleManager.RoleExistsAsync("Staff"))
         {
             legacyRole.Name = "Staff";
             await roleManager.UpdateAsync(legacyRole);
         }
+        foreach (var roleName in new[] { "Staff", "Volunteer", "Donor" })
+        {
+            if (!await roleManager.RoleExistsAsync(roleName))
+                await roleManager.CreateAsync(new IdentityRole(roleName));
+        }
+        if (!includeDemoData) return;
 
         // --- Demo accounts ---------------------------------------------------
         await CreateDemoUserAsync(userManager, "staff@gotg.org", "Password123!", "Staff");
@@ -137,3 +134,4 @@ public class DbSeeder
         }
     }
 }
+

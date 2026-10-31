@@ -15,6 +15,7 @@ namespace GiftOfTheGivers.Controllers;
 /// </summary>
 public class DonationsController : Controller
 {
+    private readonly SubmissionAccessService _access;
     private readonly HttpClient _httpClient;
     private readonly ApplicationDbContext _db;
     private readonly ITaxCertificateService _taxCertService;
@@ -22,10 +23,12 @@ public class DonationsController : Controller
 
     public DonationsController(
         IHttpClientFactory httpClientFactory,
+        SubmissionAccessService access,
         ApplicationDbContext db,
         ITaxCertificateService taxCertService,
         ILogger<DonationsController> logger)
     {
+        _access = access;
         _httpClient = httpClientFactory.CreateClient("GiftOfTheGiversFunctions");
         _db = db;
         _taxCertService = taxCertService;
@@ -35,10 +38,10 @@ public class DonationsController : Controller
     // ============================================================
     // GET: Donations (Read all donations via Azure Function)
     // ============================================================
-    [AllowAnonymous]
+    [Authorize(Roles = "Staff")]
     public async Task<IActionResult> Index()
     {
-        try
+        if (_httpClient.BaseAddress != null) try
         {
             // Call Azure Function: GET /api/donations
             var donations = await _httpClient.GetFromJsonAsync<List<Donation>>("api/donations");
@@ -57,12 +60,12 @@ public class DonationsController : Controller
     // ============================================================
     // GET: Donations/Details/5 (Read one donation via Azure Function)
     // ============================================================
-    [AllowAnonymous]
+    [Authorize(Roles = "Staff")]
     public async Task<IActionResult> Details(int? id)
     {
         if (id == null) return NotFound();
 
-        try
+        if (_httpClient.BaseAddress != null) try
         {
             var response = await _httpClient.GetAsync($"api/donations/{id}");
             if (response.IsSuccessStatusCode)
@@ -88,12 +91,12 @@ public class DonationsController : Controller
     public IActionResult Create() => View(new Donation());
 
     // ============================================================
-    // POST: Donations/Create (Create donation via Azure Function)
+    // POST: Donations/Create (single database write path)
     // ============================================================
     [HttpPost]
     [ValidateAntiForgeryToken]
     [AllowAnonymous]
-    public async Task<IActionResult> Create(Donation donation)
+    public async Task<IActionResult> Create([Bind("DonorName,Email,Amount,Currency,IsRecurring")] Donation donation)
     {
         if (ModelState.IsValid)
         {
@@ -102,38 +105,12 @@ public class DonationsController : Controller
                 ? User.FindFirstValue(ClaimTypes.NameIdentifier)
                 : null;
 
-            int createdId = 0;
-
-            // 1. Send to Azure Function: POST /api/donations
-            try
-            {
-                var response = await _httpClient.PostAsJsonAsync("api/donations", donation);
-                if (response.IsSuccessStatusCode)
-                {
-                    var created = await response.Content.ReadFromJsonAsync<Donation>();
-                    if (created != null && created.Id > 0)
-                    {
-                        createdId = created.Id;
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                _logger.LogWarning(ex, "Azure Function offline — saving via direct Class Library DbContext.");
-            }
-
-            // 2. Fallback to direct DB context if Azure Function was unreachable
-            if (createdId == 0)
-            {
-                donation.ReferenceNumber = TaxCertificateHelper.FormatCertificateNumber(new Random().Next(100, 999), donation.DonationDate);
-                _db.Donations.Add(donation);
-                await _db.SaveChangesAsync();
-
-                // Format final certificate number using Class Library helper
-                donation.ReferenceNumber = TaxCertificateHelper.FormatCertificateNumber(donation.Id, donation.DonationDate);
-                await _db.SaveChangesAsync();
-                createdId = donation.Id;
-            }
+            _db.Donations.Add(donation);
+            await _db.SaveChangesAsync();
+            donation.ReferenceNumber = TaxCertificateHelper.FormatCertificateNumber(donation.Id, donation.DonationDate);
+            await _db.SaveChangesAsync();
+            var createdId = donation.Id;
+            _access.Grant(HttpContext, "donation", createdId);
 
             return RedirectToAction(nameof(Certificate), new { id = createdId });
         }
@@ -147,33 +124,30 @@ public class DonationsController : Controller
     [AllowAnonymous]
     public async Task<IActionResult> Certificate(int id)
     {
-        Donation? donation = null;
-
-        // Try getting donation from Azure Function
-        try
-        {
-            var response = await _httpClient.GetAsync($"api/donations/{id}");
-            if (response.IsSuccessStatusCode)
-            {
-                donation = await response.Content.ReadFromJsonAsync<Donation>();
-            }
-        }
-        catch { }
-
-        // Fallback to local DB
-        donation ??= await _db.Donations.FindAsync(id);
-        if (donation == null) return NotFound();
+        var donation = await _db.Donations.FindAsync(id);
+        if (donation == null || !_access.CanRead(HttpContext, "donation", id, donation.DonorId)) return NotFound();
+        Response.Headers.CacheControl = "no-store";
 
         // Invoke tax certificate generation service
         var certResult = await _taxCertService.GenerateTaxCertificateAsync(donation);
 
         ViewBag.TaxCertificate = certResult;
-        ViewBag.FormattedAmount = DonationMetricsHelper.FormatZar(donation.Amount);
+        ViewBag.FormattedAmount = $"{donation.Currency} {donation.Amount:N2}";
         ViewBag.TaxRelief = DonationMetricsHelper.FormatZar(TaxCertificateHelper.CalculateTaxRelief(donation.Amount));
         ViewBag.DonorTier = DonationMetricsHelper.GetDonationTier(donation.Amount);
         ViewBag.PboDetails = TaxCertificateHelper.GetPboRegistrationDetails();
 
         return View(donation);
+    }
+
+    [HttpGet]
+    [AllowAnonymous]
+    public async Task<IActionResult> CloudCertificate(int id)
+    {
+        var donation = await _db.Donations.FindAsync(id);
+        if (donation == null || !_access.CanRead(HttpContext, "donation", id, donation.DonorId)) return NotFound();
+        Response.Headers.CacheControl = "no-store";
+        return Json(await _taxCertService.GenerateTaxCertificateAsync(donation));
     }
 
     // ============================================================
@@ -189,27 +163,17 @@ public class DonationsController : Controller
     }
 
     // ============================================================
-    // POST: Donations/Delete/5 (Delete via Azure Function)
+    // POST: Donations/Delete/5
     // ============================================================
     [HttpPost, ActionName("Delete")]
     [ValidateAntiForgeryToken]
     [Authorize(Roles = "Staff")]
     public async Task<IActionResult> DeleteConfirmed(int id)
     {
-        try
-        {
-            await _httpClient.DeleteAsync($"api/donations/{id}");
-        }
-        catch (Exception ex)
-        {
-            _logger.LogWarning(ex, "Azure Function delete failed — deleting directly from DbContext.");
-            var donation = await _db.Donations.FindAsync(id);
-            if (donation != null)
-            {
-                _db.Donations.Remove(donation);
-                await _db.SaveChangesAsync();
-            }
-        }
+        var donation = await _db.Donations.FindAsync(id);
+        if (donation == null) return NotFound();
+        _db.Donations.Remove(donation);
+        await _db.SaveChangesAsync();
 
         return RedirectToAction(nameof(Index));
     }
@@ -226,7 +190,7 @@ public class DonationsController : Controller
             .OrderByDescending(d => d.DonationDate)
             .ToListAsync();
 
-        var amounts = donations.Select(d => d.Amount).ToList();
+        var amounts = donations.Where(d => d.Currency == "ZAR").Select(d => d.Amount).ToList();
         var total = DonationMetricsHelper.CalculateTotal(amounts);
         var average = DonationMetricsHelper.CalculateAverage(amounts);
         var taxRelief = TaxCertificateHelper.CalculateTaxRelief(total);
@@ -240,3 +204,4 @@ public class DonationsController : Controller
         return View(donations);
     }
 }
+

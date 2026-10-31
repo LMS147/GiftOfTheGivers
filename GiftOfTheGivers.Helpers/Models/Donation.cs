@@ -28,6 +28,7 @@ public class Donation
 
     [Required(ErrorMessage = "Please choose a currency.")]
     [StringLength(3)]
+    [RegularExpression("^(ZAR|USD|EUR)$", ErrorMessage = "Choose ZAR, USD or EUR.")]
     [Display(Name = "Currency")]
     public string Currency { get; set; } = "ZAR";
 
@@ -47,3 +48,4 @@ public class Donation
     [Display(Name = "Reference number")]
     public string ReferenceNumber { get; set; } = string.Empty;
 }
+

@@ -21,18 +21,15 @@ public class VolunteersController : Controller
 
     public static readonly string[] AvailabilityOptions = { "Weekdays", "Weekends", "Full-time", "On-call" };
 
-    private readonly HttpClient _httpClient;
+    private readonly SubmissionAccessService _access;
     private readonly ApplicationDbContext _db;
-    private readonly ILogger<VolunteersController> _logger;
 
     public VolunteersController(
-        IHttpClientFactory httpClientFactory,
-        ApplicationDbContext db,
-        ILogger<VolunteersController> logger)
+        SubmissionAccessService access,
+        ApplicationDbContext db)
     {
-        _httpClient = httpClientFactory.CreateClient("GiftOfTheGiversFunctions");
+        _access = access;
         _db = db;
-        _logger = logger;
     }
 
     // ============================================================
@@ -47,12 +44,12 @@ public class VolunteersController : Controller
     }
 
     // ============================================================
-    // POST: Volunteers/Create (via Azure Function)
+    // POST: Volunteers/Create (database-backed)
     // ============================================================
     [HttpPost]
     [ValidateAntiForgeryToken]
     [AllowAnonymous]
-    public async Task<IActionResult> Create(Volunteer volunteer, string[]? selectedSkills)
+    public async Task<IActionResult> Create([Bind("FullName,Email,Phone,Availability,Notes")] Volunteer volunteer, string[]? selectedSkills)
     {
         if (selectedSkills is { Length: > 0 })
             volunteer.Skills = string.Join(", ", selectedSkills);
@@ -70,61 +67,27 @@ public class VolunteersController : Controller
             ? User.FindFirstValue(ClaimTypes.NameIdentifier)
             : null;
 
-        int createdId = 0;
-
-        // 1. Send to Azure Function: POST /api/volunteers (matches DJsController Create)
-        try
-        {
-            var response = await _httpClient.PostAsJsonAsync("api/volunteers", volunteer);
-            if (response.IsSuccessStatusCode)
-            {
-                var created = await response.Content.ReadFromJsonAsync<Volunteer>();
-                if (created != null && created.Id > 0)
-                {
-                    createdId = created.Id;
-                }
-            }
-        }
-        catch (Exception ex)
-        {
-            _logger.LogWarning(ex, "Azure Function offline — falling back to direct DbContext.");
-        }
-
-        // 2. Fallback to direct DB context if Azure Function was unreachable
-        if (createdId == 0)
-        {
-            _db.Volunteers.Add(volunteer);
-            await _db.SaveChangesAsync();
-            createdId = volunteer.Id;
-        }
+        volunteer.Status = "Pending";
+        _db.Volunteers.Add(volunteer);
+        await _db.SaveChangesAsync();
+        var createdId = volunteer.Id;
+        _access.Grant(HttpContext, "volunteer", createdId);
 
         return RedirectToAction(nameof(ThankYou), new { id = createdId });
     }
 
     // ============================================================
-    // GET: Volunteers/ThankYou/5 (via Azure Function)
+    // GET: Volunteers/ThankYou/5 (database-backed)
     // ============================================================
     [AllowAnonymous]
     public async Task<IActionResult> ThankYou(int id)
     {
-        Volunteer? volunteer = null;
-
-        // Try getting volunteer from Azure Function
-        try
-        {
-            var response = await _httpClient.GetAsync($"api/volunteers/{id}");
-            if (response.IsSuccessStatusCode)
-            {
-                volunteer = await response.Content.ReadFromJsonAsync<Volunteer>();
-            }
-        }
-        catch { }
-
-        // Fallback to local DB
-        volunteer ??= await _db.Volunteers.FindAsync(id);
-        if (volunteer == null) return NotFound();
+        var volunteer = await _db.Volunteers.FindAsync(id);
+        if (volunteer == null || !_access.CanRead(HttpContext, "volunteer", id, volunteer.UserId)) return NotFound();
+        Response.Headers.CacheControl = "no-store";
 
         return View(volunteer);
     }
 }
+
 

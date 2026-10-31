@@ -53,7 +53,7 @@
                     <div class="card-body">
                         <div class="stat-icon"><i class="bi bi-cash-coin"></i></div>
                         <div class="stat-value">@totalZar</div>
-                        <div class="stat-label">total contribution</div>
+                        <div class="stat-label">total contribution (ZAR)</div>
                     </div>
                 </div>
             </div>
@@ -62,7 +62,7 @@
                     <div class="card-body">
                         <div class="stat-icon text-success"><i class="bi bi-shield-check"></i></div>
                         <div class="stat-value text-success">@taxRelief</div>
-                        <div class="stat-label">SARS 18A tax relief (28%)</div>
+                        <div class="stat-label">Illustrative calculation (ZAR, 28%)</div>
                     </div>
                 </div>
             </div>
@@ -71,7 +71,7 @@
                     <div class="card-body">
                         <div class="stat-icon"><i class="bi bi-calculator"></i></div>
                         <div class="stat-value">@avgZar</div>
-                        <div class="stat-label">average donation</div>
+                        <div class="stat-label">average donation (ZAR)</div>
                     </div>
                 </div>
             </div>
@@ -79,9 +79,9 @@
 
         <div class="card feature-card">
             <div class="card-header bg-transparent d-flex justify-content-between align-items-center py-3 border-bottom">
-                <h5 class="card-title mb-0 fs-6 fw-bold">Issued Tax Certificates</h5>
+                <h5 class="card-title mb-0 fs-6 fw-bold">Prototype receipts</h5>
                 <span class="badge bg-light text-dark border">
-                    <i class="bi bi-box-seam me-1"></i> Formatted via GiftOfTheGivers.Helpers NuGet Package
+                    <i class="bi bi-box-seam me-1"></i> Formatted with shared helpers
                 </span>
             </div>
             <div class="table-responsive">
@@ -114,7 +114,7 @@
                                 </td>
                                 <td class="text-end">
                                     <a class="btn btn-soft btn-sm" asp-area="" asp-controller="Donations" asp-action="Certificate" asp-route-id="@d.Id">
-                                        <i class="bi bi-file-earmark-text me-1"></i> View certificate
+                                        <i class="bi bi-file-earmark-text me-1"></i> View receipt
                                     </a>
                                 </td>
                             </tr>
@@ -129,3 +129,4 @@
         </p>
     }
 </div>
+

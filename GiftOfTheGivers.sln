@@ -1,4 +1,4 @@
-﻿
+
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 18
 VisualStudioVersion = 18.9.12120.119 stable
@@ -8,6 +8,8 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GiftOfTheGivers.Helpers", "GiftOfTheGivers.Helpers\GiftOfTheGivers.Helpers.csproj", "{AF9D5E56-9BDB-4A24-BBB6-B79B75A63D4B}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GiftOfTheGivers.Functions", "GiftOfTheGivers.Functions\GiftOfTheGivers.Functions.csproj", "{0FC15D06-3864-436F-A58E-0A9470B79A99}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GiftOfTheGivers.Tests", "GiftOfTheGivers.Tests\GiftOfTheGivers.Tests.csproj", "{BCFC74BD-780E-4CF6-9D30-96B49CC059A2}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -19,6 +21,19 @@ Global
 		Release|x86 = Release|x86
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{BCFC74BD-780E-4CF6-9D30-96B49CC059A2}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{BCFC74BD-780E-4CF6-9D30-96B49CC059A2}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{BCFC74BD-780E-4CF6-9D30-96B49CC059A2}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{BCFC74BD-780E-4CF6-9D30-96B49CC059A2}.Debug|x64.Build.0 = Debug|Any CPU
+		{BCFC74BD-780E-4CF6-9D30-96B49CC059A2}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{BCFC74BD-780E-4CF6-9D30-96B49CC059A2}.Debug|x86.Build.0 = Debug|Any CPU
+		{BCFC74BD-780E-4CF6-9D30-96B49CC059A2}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{BCFC74BD-780E-4CF6-9D30-96B49CC059A2}.Release|Any CPU.Build.0 = Release|Any CPU
+		{BCFC74BD-780E-4CF6-9D30-96B49CC059A2}.Release|x64.ActiveCfg = Release|Any CPU
+		{BCFC74BD-780E-4CF6-9D30-96B49CC059A2}.Release|x64.Build.0 = Release|Any CPU
+		{BCFC74BD-780E-4CF6-9D30-96B49CC059A2}.Release|x86.ActiveCfg = Release|Any CPU
+		{BCFC74BD-780E-4CF6-9D30-96B49CC059A2}.Release|x86.Build.0 = Release|Any CPU
+
 		{8C79D288-9E3C-45C7-96AA-D488E9888AC6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{8C79D288-9E3C-45C7-96AA-D488E9888AC6}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{8C79D288-9E3C-45C7-96AA-D488E9888AC6}.Debug|x64.ActiveCfg = Debug|Any CPU
@@ -63,3 +78,4 @@ Global
 		SolutionGuid = {094CEEF2-E3DC-4A3E-8F17-2FD4EDB3AAD9}
 	EndGlobalSection
 EndGlobal
+

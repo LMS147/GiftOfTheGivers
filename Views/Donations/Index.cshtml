@@ -1,0 +1,19 @@
+@model IEnumerable<GiftOfTheGivers.Helpers.Models.Donation>
+@{ ViewData["Title"] = "Donation records"; }
+<div class="container py-5">
+    <h1>Donation records</h1>
+    <p class="text-muted">Submitted prototype records; these do not confirm payment.</p>
+    <div class="table-responsive"><table class="table">
+        <thead><tr><th>Reference</th><th>Donor</th><th>Amount</th><th>Date</th><th>Actions</th></tr></thead>
+        <tbody>
+        @foreach (var item in Model)
+        {
+            <tr><td>@item.ReferenceNumber</td><td>@item.DonorName</td>
+                <td>@item.Currency @item.Amount.ToString("N2")</td><td>@item.DonationDate.ToString("dd MMM yyyy")</td>
+                <td><a asp-action="Details" asp-route-id="@item.Id">Details</a> ·
+                    <a asp-action="Delete" asp-route-id="@item.Id">Delete</a></td></tr>
+        }
+        </tbody>
+    </table></div>
+    @if (!Model.Any()) { <p>No donation records yet.</p> }
+</div>

@@ -85,3 +85,19 @@
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
 }
+
+
+<div class="container mb-4">
+    <details>
+        <summary>Cloud audit retries</summary>
+        <p class="small text-muted">Retry an update after restoring Azure Functions or audit storage. Existing audit blobs are safely replaced.</p>
+        @foreach (var update in Model.RecentUpdates)
+        {
+            <form asp-action="RetryAudit" method="post" class="d-flex gap-2 align-items-center mb-2">
+                <input type="hidden" name="id" value="@update.Id" />
+                <span>@update.Title</span>
+                <button type="submit" class="btn btn-soft btn-sm">Retry cloud audit</button>
+            </form>
+        }
+    </details>
+</div>

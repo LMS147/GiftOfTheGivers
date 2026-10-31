@@ -3,7 +3,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using GiftOfTheGivers.Helpers.Data;
-using GiftOfTheGivers.Models.ViewModels;
+using GiftOfTheGivers.Helpers.Models.ViewModels;
 
 namespace GiftOfTheGivers.Areas.Volunteer.Controllers;
 
@@ -61,3 +61,4 @@ public class VolunteerDashboardController : Controller
         };
     }
 }
+

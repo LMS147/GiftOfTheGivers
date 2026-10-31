@@ -30,8 +30,10 @@ public class TaxCertificateService : ITaxCertificateService
     }
 
     public string FunctionEndpointUrl =>
-        _configuration["AzureFunctions:TaxCertificateUrl"]
-        ?? "http://localhost:7071/api/tax-certificate";
+        !string.IsNullOrWhiteSpace(_configuration["AzureFunctions:TaxCertificateUrl"])
+            ? _configuration["AzureFunctions:TaxCertificateUrl"]!
+            : (!string.IsNullOrWhiteSpace(_configuration["AzureFunctions:BaseUrl"])
+                ? _configuration["AzureFunctions:BaseUrl"]!.TrimEnd('/') + "/api/tax-certificate" : "");
 
     public async Task<TaxCertificateResult> GenerateTaxCertificateAsync(
         Donation donation,
@@ -40,7 +42,7 @@ public class TaxCertificateService : ITaxCertificateService
         var endpoint = FunctionEndpointUrl;
         _logger.LogInformation("Invoking Azure Function at {Url} for donation #{Id}", endpoint, donation.Id);
 
-        try
+        if (!string.IsNullOrWhiteSpace(endpoint)) try
         {
             var payload = new
             {
@@ -59,7 +61,7 @@ public class TaxCertificateService : ITaxCertificateService
                 var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
                 var cloudResult = await response.Content.ReadFromJsonAsync<TaxCertificateResult>(options, cancellationToken);
 
-                if (cloudResult != null)
+                if (cloudResult is { Success: true } && cloudResult.DonationId == donation.Id)
                 {
                     cloudResult.IsCloudGenerated = true;
                     cloudResult.StatusMessage = "Successfully generated and verified by Azure Function (HTTP Trigger)";
@@ -72,6 +74,7 @@ public class TaxCertificateService : ITaxCertificateService
                 _logger.LogWarning("Azure Function returned HTTP {StatusCode}. Using local Helper fallback.", response.StatusCode);
             }
         }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested) { throw; }
         catch (Exception ex)
         {
             _logger.LogWarning(ex, "Azure Function at {Url} could not be reached. Using local Helper fallback.", endpoint);
@@ -81,7 +84,7 @@ public class TaxCertificateService : ITaxCertificateService
         var issueDate = donation.DonationDate != default ? donation.DonationDate : DateTime.UtcNow;
         var certNumber = TaxCertificateHelper.FormatCertificateNumber(donation.Id, issueDate);
         var taxRelief = TaxCertificateHelper.CalculateTaxRelief(donation.Amount);
-        var formattedAmount = DonationMetricsHelper.FormatZar(donation.Amount);
+        var formattedAmount = $"{donation.Currency} {donation.Amount:N2}";
         var donorRef = DonationMetricsHelper.GenerateDonorReference(donation.DonorName, donation.Id);
         var tier = DonationMetricsHelper.GetDonationTier(donation.Amount);
         var hash = TaxCertificateHelper.GenerateVerificationHash(certNumber, donation.Amount, donation.Email);
@@ -113,3 +116,4 @@ public class TaxCertificateService : ITaxCertificateService
         };
     }
 }
+
