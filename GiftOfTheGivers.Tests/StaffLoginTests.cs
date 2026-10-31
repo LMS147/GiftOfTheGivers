@@ -18,7 +18,7 @@ public class StaffLoginTests
     public async Task ProvisionedStaffCanSignInAndPublicRegistrationCannotChooseStaff()
     {
         var name = Guid.NewGuid().ToString();
-        using var server = new TestServer(new WebHostBuilder().ConfigureServices(services =>
+        using var server = new TestServer(new WebHostBuilder().UseSetting(WebHostDefaults.ApplicationKey, typeof(DonationsController).Assembly.GetName().Name!).ConfigureServices(services =>
         {
             services.AddLogging(); services.AddDataProtection(); services.AddHttpClient();
             services.AddDbContext<ApplicationDbContext>(o => o.UseInMemoryDatabase(name));

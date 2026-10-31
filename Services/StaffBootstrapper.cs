@@ -113,7 +113,7 @@ public sealed class StaffBootstrapper(
         return new(StaffBootstrapStatus.Failed, code);
     }
     private static string Codes(IdentityResult result) => string.Join(",", result.Errors.Select(e => e.Code));
-    private static bool IsStrongPassword(string password) => !string.IsNullOrEmpty(password) && password.Length >= 12
+    private static bool IsStrongPassword(string password) => !string.IsNullOrEmpty(password) && password != "Password123!" && password.Length >= 12
         && password.Any(char.IsUpper) && password.Any(char.IsLower) && password.Any(char.IsDigit)
         && password.Any(c => !char.IsLetterOrDigit(c));
 }

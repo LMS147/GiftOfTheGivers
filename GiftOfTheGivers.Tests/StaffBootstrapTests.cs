@@ -22,6 +22,7 @@ public class StaffBootstrapTests
     [Theory]
     [InlineData("not-an-email", OriginalPassword, "InvalidEmail")]
     [InlineData("staff@example.com", "weak", "WeakPassword")]
+    [InlineData("staff@example.com", "Password123!", "WeakPassword")]
     public async Task InvalidSettingsLeaveDatabaseUnchanged(string email, string password, string expected)
     {
         using var services = Services(); using var scope = services.CreateScope();

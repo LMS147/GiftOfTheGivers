@@ -152,6 +152,6 @@ Behavior and troubleshooting:
 - Disabled or missing setup settings leave accounts unchanged. Credentials are never committed or logged.
 - An existing Staff account keeps its password by default. `ExistingStaffPasswordMismatch` means the supplied password does not match: use the correct password or explicitly set ResetPassword=true to recover that Staff account. Explicit recovery also clears lockout.
 - An existing Donor/Volunteer account is promoted only if the supplied password matches its current password. `ExistingAccountPasswordMismatch` refuses promotion and does not reset that account; use the correct current password or a new, unused email address.
-- `WeakPassword` or `InvalidEmail` means the settings need correction. Identity validation failures report error codes without credentials. Setup failures are logged without taking the website offline.
+- `WeakPassword` or `InvalidEmail` means the settings need correction. The publicly documented demo password `Password123!` is rejected for this setup. Identity validation failures report error codes without credentials. Setup failures are logged without taking the website offline.
 - Creation, role assignment and audit changes use one transaction on SQL Server. No schema migration is added by this setup feature; the existing Identity/audit schema is used.
 - This is an operator-controlled setup/recovery mechanism, not a public Staff registration page. Disable it and remove its password setting after setup to avoid reapplying recovery settings on future restarts.
