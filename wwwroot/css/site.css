@@ -948,3 +948,13 @@ footer.footer .f-item i { color: var(--brand-400); margin-top: .15rem; }
     .donor-chart { gap: 8px; }
     .donor-chart-track { height: 145px; }
 }
+
+.donor-mobile-record { padding: 18px 0; border-top: 1px solid #e2ebe5; overflow-wrap: anywhere; }
+.donor-mobile-record>div:first-child>strong { display: block; margin-bottom: 6px; }
+.donor-mobile-record-actions { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; margin-top: 12px; }
+.donor-mobile-record-actions>strong { color: #104e3b; }
+@media(max-width:575px) {
+    .donor-stat { padding: 16px; }
+    .donor-stat strong { font-size: 1.45rem; }
+    .donor-stat p { font-size: .77rem; }
+}
