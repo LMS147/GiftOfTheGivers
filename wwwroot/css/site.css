@@ -890,3 +890,11 @@ footer.footer .f-item i { color: var(--brand-400); margin-top: .15rem; }
 @media print{body{background:#fff!important}.print-hide,header,footer,.back-to-top,.skip-link{display:none!important}.receipt-card{box-shadow:none!important;border:1px solid #bbb!important;break-inside:avoid}.container{max-width:100%!important}}
 
 @media(min-width:992px){.project-support{top:100px}}
+/* Keep headings and action labels readable on light and dark surfaces. */
+.page-heading h1 { color: #fff; }
+.eyebrow { color: #805400; }
+.hero .eyebrow, .dash-hero .eyebrow, .cta-band .eyebrow, .page-heading .eyebrow { color: #f7d681; }
+.badge-amber { color: #805300; }
+.dash-nav-section { color: rgba(255, 255, 255, .72); }
+.btn-gotg { background: linear-gradient(135deg, #0b6b5d, #087a6c); }
+.filter-bar select { min-width: 160px; }
