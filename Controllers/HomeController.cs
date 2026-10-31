@@ -26,7 +26,7 @@ public class HomeController : Controller
     public async Task<IActionResult> Index()
     {
         // 1. Try fetching home metrics from Azure Function: GET /api/home/summary
-        try
+        if (_httpClient.BaseAddress != null) try
         {
             var summary = await _httpClient.GetFromJsonAsync<HomeViewModel>("api/home/summary");
             if (summary != null)
@@ -69,3 +69,4 @@ public class HomeController : Controller
     public IActionResult Error() =>
         View(new ErrorViewModel { RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier });
 }
+

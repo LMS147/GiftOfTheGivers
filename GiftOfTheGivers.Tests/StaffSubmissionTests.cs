@@ -1,3 +1,5 @@
+using Microsoft.AspNetCore.Antiforgery;
+using Microsoft.AspNetCore.Http;
 using System.Net;
 using System.Security.Claims;
 using System.Text.Encodings.Web;
@@ -31,8 +33,7 @@ public class StaffSubmissionTests
                 services.AddHttpClient();
                 services.AddAuthentication("test").AddScheme<AuthenticationSchemeOptions, StaffAuthentication>("test", _ => { });
                 services.AddAuthorization();
-                // This test isolates MVC binding and the save action; CSRF remains enabled in production.
-                services.AddControllersWithViews(o => o.Filters.Add(new IgnoreAntiforgeryTokenAttribute()))
+                services.AddControllersWithViews()
                     .AddApplicationPart(typeof(StaffController).Assembly);
             })
             .Configure(app =>
@@ -40,6 +41,16 @@ public class StaffSubmissionTests
                 app.UseRouting();
                 app.UseAuthentication();
                 app.UseAuthorization();
+                app.Use(async (context, next) =>
+                {
+                    if (context.Request.Path == "/test/token")
+                    {
+                        var tokens = context.RequestServices.GetRequiredService<IAntiforgery>().GetAndStoreTokens(context);
+                        await context.Response.WriteAsync(tokens.RequestToken!);
+                        return;
+                    }
+                    await next();
+                });
                 app.UseEndpoints(e => e.MapAreaControllerRoute("staff", "Staff", "Staff/{action}", new { controller = "Staff" }));
             }));
         using (var scope = server.Services.CreateScope())
@@ -48,8 +59,15 @@ public class StaffSubmissionTests
             db.ReliefProjects.Add(new ReliefProject { Id = 1, Name = "Test project" });
             await db.SaveChangesAsync();
         }
-        var response = await server.CreateClient().PostAsync("/Staff/PostUpdate", new FormUrlEncodedContent(new Dictionary<string, string>
+        var client = server.CreateClient();
+        var rejected = await client.PostAsync("/Staff/PostUpdate", new FormUrlEncodedContent(new Dictionary<string, string>()));
+        Assert.Equal(HttpStatusCode.BadRequest, rejected.StatusCode);
+        var tokenResponse = await client.GetAsync("/test/token");
+        var token = await tokenResponse.Content.ReadAsStringAsync();
+        client.DefaultRequestHeaders.Add("Cookie", string.Join("; ", tokenResponse.Headers.GetValues("Set-Cookie").Select(c => c.Split(';')[0])));
+        var response = await client.PostAsync("/Staff/PostUpdate", new FormUrlEncodedContent(new Dictionary<string, string>
         {
+            ["__RequestVerificationToken"] = token,
             ["NewUpdate.ReliefProjectId"] = "1", ["NewUpdate.Title"] = "Delivered supplies",
             ["NewUpdate.Body"] = "Delivery complete", ["NewUpdate.Id"] = "999",
             ["NewUpdate.PostedByName"] = "spoofed", ["NewUpdate.PostedAt"] = "2000-01-01"
