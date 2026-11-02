@@ -1,4 +1,5 @@
 using System.Net;
+using System.Globalization;
 using System.Security.Claims;
 using System.Text.Encodings.Web;
 using GiftOfTheGivers.Controllers;
@@ -21,8 +22,10 @@ namespace GiftOfTheGivers.Tests;
 
 public class UiSmokeTests
 {
-    [Fact]
-    public async Task MainScreensRenderAndDonationReviewConfirmDownloadWorkOverHttp()
+    [Theory]
+    [InlineData("en-US")]
+    [InlineData("af-ZA")]
+    public async Task MainScreensRenderAndDonationReviewConfirmDownloadWorkOverHttp(string hostCulture)
     {
         var dbName = Guid.NewGuid().ToString();
         using var server = new TestServer(new WebHostBuilder().ConfigureServices(services =>
@@ -37,6 +40,15 @@ public class UiSmokeTests
             services.AddRazorPages().AddApplicationPart(typeof(DonationsController).Assembly);
         }).Configure(app =>
         {
+            // Simulate both dot-decimal and comma-decimal Windows regional settings.
+            app.Use(async (context, next) =>
+            {
+                CultureInfo.CurrentCulture = CultureInfo.GetCultureInfo(hostCulture);
+                CultureInfo.CurrentUICulture = CultureInfo.GetCultureInfo(hostCulture);
+                await next();
+            });
+            app.UseRequestLocalization(new RequestLocalizationOptions()
+                .SetDefaultCulture("en-US").AddSupportedCultures("en-US").AddSupportedUICultures("en-US"));
             app.UseRouting(); app.UseAuthentication(); app.UseAuthorization();
             app.Use(async (context, next) =>
             {
@@ -74,7 +86,7 @@ public class UiSmokeTests
                 Assert.DoesNotContain("Volunteer dashboard", html);
                 Assert.DoesNotContain("Student prototype · No real payment is collected.", html);
             }
-            var output = Environment.GetEnvironmentVariable("UI_SNAPSHOT_DIRECTORY");
+            var output = (hostCulture == "en-US" ? Environment.GetEnvironmentVariable("UI_SNAPSHOT_DIRECTORY") : null);
             if (output != null) { Directory.CreateDirectory(output); await File.WriteAllTextAsync(Path.Combine(output, screen.Item2 + ".html"), html); }
         }
         client.DefaultRequestHeaders.Remove("X-Test-Role");
@@ -95,9 +107,14 @@ public class UiSmokeTests
         var confirmationHtml = await confirmation.Content.ReadAsStringAsync();
         Assert.DoesNotContain("Azure Function Response", confirmationHtml);
         Assert.DoesNotContain("Student prototype · No payment processed. Not a valid tax certificate. Not affiliated with the real foundation.", confirmationHtml);
-        var receiptOutput = Environment.GetEnvironmentVariable("UI_SNAPSHOT_DIRECTORY");
+        var receiptOutput = (hostCulture == "en-US" ? Environment.GetEnvironmentVariable("UI_SNAPSHOT_DIRECTORY") : null);
         if (receiptOutput != null) await File.WriteAllTextAsync(Path.Combine(receiptOutput, "receipt.html"), confirmationHtml);
         var id = location.Split('/').Last();
+        using (var scope = server.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+            Assert.Equal(125.50m, (await db.Donations.FindAsync(int.Parse(id)))!.Amount);
+        }
         var pdf = await client.GetAsync("/Donations/Download/" + id); Assert.Equal("application/pdf", pdf.Content.Headers.ContentType!.MediaType);
         Assert.StartsWith("%PDF-", System.Text.Encoding.ASCII.GetString(await pdf.Content.ReadAsByteArrayAsync()));
     }

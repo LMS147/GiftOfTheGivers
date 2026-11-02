@@ -64,10 +64,17 @@ public sealed class AssignmentEnvironment : IAsyncLifetime
             }
 
             var storage = Environment.GetEnvironmentVariable("GOTG_TEST_STORAGE") ?? "UseDevelopmentStorage=true";
-            if (storage == "UseDevelopmentStorage=true" && !await PortOpenAsync(10000))
+            if (storage == "UseDevelopmentStorage=true")
             {
-                Start("azurite", new[] { "--silent", "--skipApiVersionCheck", "--location", Path.Combine(temp, "azurite") }, temp, new(), "azurite.log", "GOTG_AZURITE_PATH");
-                await WaitForPortAsync(10000);
+                var ports = new[] { 10000, 10001, 10002 };
+                var listening = await Task.WhenAll(ports.Select(PortOpenAsync));
+                if (listening.Any(open => open) && !listening.All(open => open))
+                    throw new InvalidOperationException("Azurite is only partly running. Start its Blob, Queue and Table services on ports 10000, 10001 and 10002 before rerunning. See Testing/Assignment-A.md.");
+                if (!listening.All(open => open))
+                {
+                    var azurite = Start("azurite", new[] { "--silent", "--skipApiVersionCheck", "--location", Path.Combine(temp, "azurite") }, temp, new(), "azurite.log", "GOTG_AZURITE_PATH");
+                    await WaitForAzuriteAsync(azurite, ports);
+                }
             }
             var webPublish = Environment.GetEnvironmentVariable("GOTG_WEB_PUBLISH_DIR") ?? Path.Combine(temp, "web");
             var functionPublish = Environment.GetEnvironmentVariable("GOTG_FUNCTIONS_PUBLISH_DIR") ?? Path.Combine(temp, "functions");
@@ -121,10 +128,7 @@ public sealed class AssignmentEnvironment : IAsyncLifetime
     private Process Start(string command, IEnumerable<string> arguments, string working, Dictionary<string, string> environment, string logName, string? overrideName = null)
     {
         command = (overrideName == null ? null : Environment.GetEnvironmentVariable(overrideName)) ?? command;
-        var info = new ProcessStartInfo(command) { WorkingDirectory = working, UseShellExecute = false, RedirectStandardOutput = true, RedirectStandardError = true, CreateNoWindow = true };
-        if (OperatingSystem.IsWindows() && (command.EndsWith(".cmd", StringComparison.OrdinalIgnoreCase) || command == "azurite"))
-        { info.FileName = "cmd.exe"; info.ArgumentList.Add("/d"); info.ArgumentList.Add("/c"); info.ArgumentList.Add(command); }
-        foreach (var arg in arguments) info.ArgumentList.Add(arg);
+        var info = TestProcessLauncher.Create(command, arguments, working);
         foreach (var pair in environment) info.Environment[pair.Key] = pair.Value;
         var process = Process.Start(info) ?? throw new InvalidOperationException("Could not start " + command);
         processes.Add(process);
@@ -150,7 +154,23 @@ public sealed class AssignmentEnvironment : IAsyncLifetime
     }
     private static int FreePort() { var listener = new TcpListener(IPAddress.Loopback, 0); listener.Start(); var port = ((IPEndPoint)listener.LocalEndpoint).Port; listener.Stop(); return port; }
     private static async Task<bool> PortOpenAsync(int port) { try { using var client = new TcpClient(); await client.ConnectAsync(IPAddress.Loopback, port); return true; } catch (SocketException) { return false; } }
-    private static async Task WaitForPortAsync(int port) { for (var i = 0; i < 100; i++) { if (await PortOpenAsync(port)) return; await Task.Delay(250); } throw new TimeoutException("Azurite did not start. Install it or set GOTG_AZURITE_PATH."); }
+    private async Task WaitForAzuriteAsync(Process process, int[] ports)
+    {
+        var log = Path.Combine(EvidenceDirectory, "azurite.log");
+        var deadline = DateTime.UtcNow.AddSeconds(60);
+        while (DateTime.UtcNow < deadline)
+        {
+            if (process.HasExited)
+            {
+                await Task.WhenAll(logTasks.TakeLast(2));
+                var details = File.Exists(log) ? string.Join(Environment.NewLine, File.ReadLines(log).TakeLast(15)) : "No process output was written.";
+                throw new InvalidOperationException($"Azurite exited with code {process.ExitCode}. {details} See {log}. Install Node.js and Azurite, restart Visual Studio, or set GOTG_AZURITE_PATH.");
+            }
+            if ((await Task.WhenAll(ports.Select(PortOpenAsync))).All(open => open)) return;
+            await Task.Delay(250);
+        }
+        throw new TimeoutException($"Azurite did not open ports 10000, 10001 and 10002 within 60 seconds. Inspect {log}; run azurite.cmd --silent --skipApiVersionCheck in PowerShell and keep it open while rerunning tests.");
+    }
     private static string FindRoot()
     {
         var configured = Environment.GetEnvironmentVariable("GOTG_REPO_ROOT");
