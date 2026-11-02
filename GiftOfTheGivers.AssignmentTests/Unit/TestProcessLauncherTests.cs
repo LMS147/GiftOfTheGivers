@@ -20,7 +20,7 @@ public class TestProcessLauncherTests
         try
         {
             var command = Path.Combine(directory, "example tool.cmd");
-            await File.WriteAllTextAsync(command, "@echo off\r\necho ROOT=%~dp0\r\necho ARG=%1\r\n");
+            await File.WriteAllTextAsync(command, "@echo off\r\necho ROOT=\"%~dp0\"\r\necho ARG=%1\r\n");
             var argument = Path.Combine(directory, "storage data");
             using var process = Process.Start(TestProcessLauncher.Create(command, new[] { argument }, directory))!;
             using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(10));
@@ -28,7 +28,7 @@ public class TestProcessLauncherTests
             var error = await process.StandardError.ReadToEndAsync(timeout.Token);
             await process.WaitForExitAsync(timeout.Token);
             Assert.Equal(0, process.ExitCode);
-            Assert.Contains("ROOT=" + directory + Path.DirectorySeparatorChar, output);
+            Assert.True(output.Contains("ROOT=\"" + directory + Path.DirectorySeparatorChar + "\""), "Actual output: " + output + " Error: " + error);
             Assert.Contains("ARG=\"" + argument + "\"", output);
             Assert.True(string.IsNullOrWhiteSpace(error), error);
         }
