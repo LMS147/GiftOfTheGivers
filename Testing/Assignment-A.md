@@ -158,7 +158,7 @@ $azuriteCommand = Join-Path (npm.cmd prefix -g) 'azurite.cmd'
 & $azuriteCommand --silent --skipApiVersionCheck
 ```
 
-For automatic startup you may set `GOTG_AZURITE_PATH` to that full `.cmd` path in the environment used to launch Visual Studio. The test launcher now resolves npm shims and preserves spaces in Windows paths. Startup errors include the exit code and the path to `azurite.log` under TestResults/Assignment. Read that log for Node errors or port conflicts. Do not start another instance when all three ports already work.
+For automatic startup you may set `GOTG_AZURITE_PATH` to that full `.cmd` path in the environment used to launch Visual Studio. The test launcher resolves npm packages and launches Azurite through Node directly on Windows, avoiding npm wrapper path errors. Core Tools uses its native executable when available. Paths and arguments containing spaces are preserved. Startup errors include the exit code and the path to `azurite.log` under TestResults/Assignment. Read that log for Node errors or port conflicts. Do not start another instance when all three ports already work.
 
 Run only A.1 unit tests while setting up dependencies:
 

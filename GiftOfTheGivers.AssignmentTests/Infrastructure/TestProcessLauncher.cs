@@ -1,3 +1,4 @@
+using System.Text.Json;
 using System.Diagnostics;
 
 namespace GiftOfTheGivers.AssignmentTests.Infrastructure;
@@ -9,6 +10,15 @@ public static class TestProcessLauncher
     {
         var args = arguments.ToArray();
         command = Resolve(command);
+        if (OperatingSystem.IsWindows() && command.EndsWith(".cmd", StringComparison.OrdinalIgnoreCase))
+        {
+            var npmTool = ResolveNpmTool(command);
+            if (npmTool is { } tool)
+            {
+                command = tool.Command;
+                if (tool.Script != null) args = new[] { tool.Script }.Concat(args).ToArray();
+            }
+        }
         var info = new ProcessStartInfo(command)
         {
             WorkingDirectory = working, UseShellExecute = false,
@@ -28,6 +38,35 @@ public static class TestProcessLauncher
         }
         else foreach (var arg in args) info.ArgumentList.Add(arg);
         return info;
+    }
+
+    private static (string Command, string? Script)? ResolveNpmTool(string shim)
+    {
+        var name = Path.GetFileNameWithoutExtension(shim);
+        var package = name.Equals("azurite", StringComparison.OrdinalIgnoreCase) ? "azurite"
+            : name.Equals("func", StringComparison.OrdinalIgnoreCase) ? "azure-functions-core-tools" : null;
+        if (package == null) return null;
+        var directory = Path.GetDirectoryName(shim)!;
+        // Local npm installs put shims in node_modules/.bin; global installs put them beside node_modules.
+        var candidates = new[] { Path.Combine(directory, "..", package), Path.Combine(directory, "node_modules", package) };
+        foreach (var candidate in candidates)
+        {
+            var packageDirectory = Path.GetFullPath(candidate);
+            var manifestPath = Path.Combine(packageDirectory, "package.json");
+            if (!File.Exists(manifestPath)) continue;
+            var nativeFunctionHost = Path.Combine(packageDirectory, "bin", "func.exe");
+            if (name.Equals("func", StringComparison.OrdinalIgnoreCase) && File.Exists(nativeFunctionHost))
+                return (nativeFunctionHost, null);
+            using var manifest = JsonDocument.Parse(File.ReadAllText(manifestPath));
+            if (!manifest.RootElement.TryGetProperty("bin", out var bins)) continue;
+            var relative = bins.ValueKind == JsonValueKind.String ? bins.GetString()
+                : bins.TryGetProperty(name, out var bin) ? bin.GetString() : null;
+            if (relative == null) continue;
+            var script = Path.GetFullPath(Path.Combine(packageDirectory, relative));
+            if (File.Exists(script) && script.EndsWith(".js", StringComparison.OrdinalIgnoreCase))
+                return (Resolve("node.exe"), script);
+        }
+        return null;
     }
 
     private static string Resolve(string command)
