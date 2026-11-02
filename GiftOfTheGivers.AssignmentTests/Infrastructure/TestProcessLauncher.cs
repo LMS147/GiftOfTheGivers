@@ -17,13 +17,13 @@ public static class TestProcessLauncher
         if (OperatingSystem.IsWindows() && (command.EndsWith(".cmd", StringComparison.OrdinalIgnoreCase) || command.EndsWith(".bat", StringComparison.OrdinalIgnoreCase)))
         {
             // ArgumentList applies Windows executable quoting, which is different from cmd /c quoting.
-            // Expand private child environment variables inside quotes to preserve spaces and ampersands.
+            // Keep the executable path literal so batch %~dp0 resolves to the tool directory.
+            // Expand argument variables inside quotes to preserve spaces and ampersands.
             if (args.Append(command).Any(value => value.IndexOfAny(new[] { '"', '\r', '\n' }) >= 0))
                 throw new ArgumentException("Test batch-tool paths and arguments must not contain quotes or newlines.");
             info.FileName = Environment.GetEnvironmentVariable("ComSpec") ?? "cmd.exe";
-            info.Environment["GOTG_TOOL_COMMAND"] = command;
             for (var i = 0; i < args.Length; i++) info.Environment[$"GOTG_TOOL_ARG_{i}"] = args[i];
-            info.Arguments = "/d /s /v:off /c \"\"%GOTG_TOOL_COMMAND%\"" +
+            info.Arguments = "/d /s /v:off /c \"\"" + command + "\"" +
                 string.Concat(Enumerable.Range(0, args.Length).Select(i => $" \"%GOTG_TOOL_ARG_{i}%\"")) + "\"";
         }
         else foreach (var arg in args) info.ArgumentList.Add(arg);
