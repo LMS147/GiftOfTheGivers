@@ -84,6 +84,9 @@ else
 }
 
 app.UseHttpsRedirection();
+// HTML number inputs submit dot decimals. Keep binding and the English UI consistent on Windows and Linux.
+app.UseRequestLocalization(new RequestLocalizationOptions()
+    .SetDefaultCulture("en-US").AddSupportedCultures("en-US").AddSupportedUICultures("en-US"));
 app.UseRouting();
 
 app.UseAuthentication();

@@ -87,3 +87,48 @@ jobs:
         with:
           name: assignment-a1-a4-evidence
           path: TestResults/Assignment
+
+  windows-assignment-tests:
+    runs-on: windows-latest
+    timeout-minutes: 25
+    env:
+      GOTG_REPO_ROOT: ${{ github.workspace }}
+      GOTG_EVIDENCE_DIR: ${{ github.workspace }}/TestResults/Windows
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '9.0.x'
+      - name: Unit regressions and both regional-formatting cases
+        run: |
+          dotnet test GiftOfTheGivers.Tests/GiftOfTheGivers.Tests.csproj -c Release --logger "trx;LogFileName=windows-regressions.trx" --results-directory TestResults/Windows
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          dotnet test GiftOfTheGivers.AssignmentTests/GiftOfTheGivers.AssignmentTests.csproj -c Release --filter "Category=Unit" --logger "trx;LogFileName=windows-unit.trx" --results-directory TestResults/Windows
+      - name: Prepare real Windows LocalDB and npm tools in a path with spaces
+        run: |
+          $localDb = Get-ChildItem 'C:/Program Files/Microsoft SQL Server' -Filter SqlLocalDB.exe -Recurse -ErrorAction SilentlyContinue | Select-Object -First 1 -ExpandProperty FullName
+          if (-not $localDb) { throw 'SQL Server LocalDB is missing from the Windows runner.' }
+          & $localDb create GotgAssignment
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          & $localDb start GotgAssignment
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          'GOTG_TEST_SQL=Server=(localdb)\GotgAssignment;Database=master;Trusted_Connection=True;Encrypt=False' >> $env:GITHUB_ENV
+          $toolRoot = Join-Path $env:RUNNER_TEMP 'gotg tools & checks'
+          npm.cmd install --prefix $toolRoot --no-package-lock azure-functions-core-tools@4 azurite@3.35.0
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          "GOTG_AZURITE_PATH=$toolRoot/node_modules/.bin/azurite.cmd" >> $env:GITHUB_ENV
+          "GOTG_FUNC_PATH=$toolRoot/node_modules/.bin/func.cmd" >> $env:GITHUB_ENV
+          "GOTG_WEB_PUBLISH_DIR=$env:RUNNER_TEMP/gotg published/web" >> $env:GITHUB_ENV
+          "GOTG_FUNCTIONS_PUBLISH_DIR=$env:RUNNER_TEMP/gotg published/functions" >> $env:GITHUB_ENV
+      - name: Publish web and Functions applications
+        run: |
+          dotnet publish GiftOfTheGivers.csproj -c Release -o "$env:GOTG_WEB_PUBLISH_DIR"
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          dotnet publish GiftOfTheGivers.Functions/GiftOfTheGivers.Functions.csproj -c Release -o "$env:GOTG_FUNCTIONS_PUBLISH_DIR"
+      - name: Real Windows Azurite Functions SQL and Selenium scenarios
+        run: dotnet test GiftOfTheGivers.AssignmentTests/GiftOfTheGivers.AssignmentTests.csproj -c Release --filter "Category!=Unit" --logger "trx;LogFileName=windows-system.trx" --results-directory TestResults/Windows
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: windows-test-results
+          path: TestResults/Windows

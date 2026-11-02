@@ -130,3 +130,40 @@ node scripts/capture-assignment-evidence.cjs TestResults/Assignment
 ```
 
 TestResults and .evidence-tools are excluded from git. Include relevant source, screenshots, environment and measured results in your assignment submission.
+
+## Windows troubleshooting for Azurite and regional settings
+
+The four Integration/Load/Selenium cases share one environment fixture. If Azurite fails, all four report the same setup error before their scenario runs. This does not mean all four application features failed.
+
+In PowerShell, install a supported Node.js LTS if `node` or `npm.cmd` is missing, then run:
+
+```powershell
+node --version
+npm.cmd install -g azurite
+azurite.cmd --silent --skipApiVersionCheck
+```
+
+Keep the Azurite terminal open. It should report listening on localhost ports **10000** (Blob), **10001** (Queue) and **10002** (Table). In another terminal:
+
+```powershell
+Test-NetConnection 127.0.0.1 -Port 10000
+Test-NetConnection 127.0.0.1 -Port 10001
+Test-NetConnection 127.0.0.1 -Port 10002
+```
+
+Restart Visual Studio after installing tools, rebuild, then rerun the four system tests. Existing Azurite is reused. If Windows cannot find the command, resolve the npm global path:
+
+```powershell
+$azuriteCommand = Join-Path (npm.cmd prefix -g) 'azurite.cmd'
+& $azuriteCommand --silent --skipApiVersionCheck
+```
+
+For automatic startup you may set `GOTG_AZURITE_PATH` to that full `.cmd` path in the environment used to launch Visual Studio. The test launcher now resolves npm shims and preserves spaces in Windows paths. Startup errors include the exit code and the path to `azurite.log` under TestResults/Assignment. Read that log for Node errors or port conflicts. Do not start another instance when all three ports already work.
+
+Run only A.1 unit tests while setting up dependencies:
+
+```powershell
+dotnet test GiftOfTheGivers.AssignmentTests/GiftOfTheGivers.AssignmentTests.csproj --filter "Category=Unit"
+```
+
+The application explicitly uses en-US request culture for its English UI and dot-decimal HTML number inputs. The smoke test now runs under both en-US and af-ZA host cultures, confirms `USD 125.50` and verifies the saved decimal amount. Do not change the expected amount, remove assertions or mark failed scenarios as passed to work around a regional-formatting error.
